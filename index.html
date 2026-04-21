@@ -59,14 +59,13 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
-  body { background: #070a0e; display: flex; align-items: center; justify-content: center; font-family: -apple-system, system-ui, sans-serif; min-height: 100vh; }
+  body { background: #070a0e; font-family: -apple-system, system-ui, sans-serif; height: 100%; }
   ::-webkit-scrollbar { display: none; }
   input, button, select { font-family: inherit; }
 </style>
 </head>
 <body>
 <div id="root"></div>
-<script type="text/babel" src="ios-frame.jsx"></script>
 <script type="text/babel">
 const { useState, useEffect, useRef, useCallback } = React;
 
@@ -973,10 +972,8 @@ function Root() {
   ];
 
   return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', padding:24, gap:32, flexWrap:'wrap', background:'#070a0e' }}>
-      <IOSDevice dark width={393} height={852}>
-        <EventfulApp variant={tweaks.variant}/>
-      </IOSDevice>
+    <div style={{ width:'100%', height:'100vh', background:C.bg, position:'relative', overflow:'hidden' }}>
+      <EventfulApp variant={tweaks.variant}/>
 
       {showTweaks && (
         <div style={{
