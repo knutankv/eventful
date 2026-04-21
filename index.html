@@ -102,26 +102,6 @@ const C = {
   tabBar:      'rgba(10,13,18,0.94)',
 };
 
-// ─── Seed data ───────────────────────────────────────────────
-const mkTs = (minsAgo) => ({ iso: new Date(Date.now() - minsAgo * 60000).toISOString(), valid: true });
-const SENSORS_LIST = ['SNS-A1','SNS-B2','SNS-C3','SNS-D4','TEMP-01','VOLT-02','PRES-03'];
-const SEED = [
-  { id:'BRG-001', group:'GR1', timestamps:[mkTs(5),mkTs(65),mkTs(320)], sensors:[{id:'SNS-A1',comment:'North span'}] },
-  { id:'BRG-002', group:'GR2', timestamps:[mkTs(10)], sensors:[] },
-  { id:'BRG-003', group:'GR2', timestamps:[], sensors:[] },
-  { id:'BRG-004', group:'GR2', timestamps:[mkTs(3),mkTs(90),mkTs(200)], sensors:[{id:'SNS-B2',comment:''}] },
-  { id:'CAB-101', group:'GR3', timestamps:[mkTs(20)], sensors:[] },
-  { id:'CAB-102', group:'GR3', timestamps:[], sensors:[] },
-  { id:'CAB-103', group:'GR3', timestamps:[mkTs(8)], sensors:[{id:'TEMP-01',comment:'Check calibration'}] },
-  { id:'JNT-A01', group:'GR4', timestamps:[], sensors:[] },
-  { id:'JNT-A02', group:'GR4', timestamps:[mkTs(45)], sensors:[] },
-  { id:'JNT-B01', group:'GR4', timestamps:[], sensors:[] },
-  { id:'SPN-201', group:'GR5', timestamps:[mkTs(2)], sensors:[] },
-  { id:'SPN-202', group:'GR5', timestamps:[mkTs(15),mkTs(75)], sensors:[] },
-  { id:'SPN-203', group:'GR6', timestamps:[], sensors:[] },
-  { id:'DK-0011', group:'GR6', timestamps:[mkTs(120)], sensors:[{id:'VOLT-02',comment:''}] },
-  { id:'DK-0012', group:'GR6', timestamps:[], sensors:[] },
-];
 
 // ─── Helpers ─────────────────────────────────────────────────
 const pad2 = n => String(n).padStart(2,'0');
@@ -303,7 +283,7 @@ function ItemMinimal({ item, onRecord, onSelect }) {
 }
 
 // ─── Detail Screen ───────────────────────────────────────────
-function DetailScreen({ item, onBack, onRecord, onUpdateItem, sensorsList=SENSORS_LIST }) {
+function DetailScreen({ item, onBack, onRecord, onUpdateItem, sensorsList=[] }) {
   const [tsExpanded,   setTsExpanded]   = useState(true);
   const [sensExpanded, setSensExpanded] = useState(item.sensors.length > 0);
 
@@ -834,10 +814,10 @@ function ItemsTab({ items, onRecord, onSelect, variant }) {
 // ─── App root ─────────────────────────────────────────────────
 function EventfulApp({ variant }) {
   const [items, setItems] = useState(()=>{
-    try { const s=localStorage.getItem('ef_items_v2'); return s?JSON.parse(s):SEED; } catch { return SEED; }
+    try { const s=localStorage.getItem('ef_items_v2'); return s?JSON.parse(s):[]; } catch { return []; }
   });
   const [sensors, setSensors] = useState(()=>{
-    try { const s=localStorage.getItem('ef_sensors'); return s?JSON.parse(s):SENSORS_LIST; } catch { return SENSORS_LIST; }
+    try { const s=localStorage.getItem('ef_sensors'); return s?JSON.parse(s):[]; } catch { return []; }
   });
   const [tab,    setTab]    = useState('items');
   const [detail, setDetail] = useState(null);
