@@ -785,7 +785,9 @@ function ItemsTab({ items, onRecord, onSelect, variant }) {
     <div style={{ height:'100%', display:'flex', flexDirection:'column' }}>
       <div style={{ height:60 }}/>
       <div style={{ padding:'12px 20px 10px' }}>
-        <div style={{ fontSize:32, fontWeight:800, color:C.text, letterSpacing:-0.8, lineHeight:1.1 }}>Eventful</div>
+        <div>
+        <img src="eventful-logo.svg" alt="Eventful" style={{ width: '100%', maxWidth: 150, display: 'block' }}/>
+      </div>
         <div style={{ fontSize:13, color:C.textMuted, marginTop:5 }}>
           {items.length} items · <span style={{ color:C.green }}>{valid} recorded</span>
         </div>
