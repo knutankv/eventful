@@ -1,0 +1,1510 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Measurement Timestamper</title>
+
+<style>
+:root{
+  --bg:#f7f7fb;
+  --text:#111827;
+  --muted:#6b7280;
+  --border:#e5e7eb;
+  --btn:#111827;
+  --btnText:#ffffff;
+  --btnAlt:#ffffff;
+  --btnAltText:#111827;
+  --danger:#ef4444;
+}
+
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+  background:var(--bg);
+  color:var(--text);
+  line-height:1.35;
+  -webkit-overflow-scrolling:touch;
+}
+.wrap{max-width:900px;margin:0 auto;padding:16px;}
+
+header{
+  border-bottom:1px solid var(--border);
+  position:sticky;
+  top:0;
+  background:rgba(247,247,251,.92);
+  z-index:10;
+}
+/* iPhone sticky/backdrop quirks */
+@supports (-webkit-touch-callout: none){
+  header{position:static;background:var(--bg);}
+}
+
+h1{margin:0 0 10px 0;font-size:22px;}
+
+.controls{display:grid;gap:12px;}
+.panel{
+  background: rgba(255,255,255,0.75);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+}
+.grid2{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:12px;
+  align-items:end;
+}
+.actionsGrid{
+  display:grid;
+  grid-template-columns: auto auto auto 1fr;
+  gap:10px;
+  align-items:center;
+}
+.backupGrid{
+  display:grid;
+  grid-template-columns: auto auto 1fr;
+  gap:10px;
+  align-items:center;
+}
+
+label{font-size:12px;color:var(--muted);}
+input[type="text"],input[type="file"],button,select,textarea{
+  border-radius:10px;border:1px solid var(--border);font-size:14px;
+}
+input[type="text"],input[type="file"],button,select{
+  height:40px;padding:0 12px;
+}
+input[type="text"]{width:100%;background:#fff;outline:none;}
+input[type="text"]:focus{border-color:rgba(37,99,235,.45);box-shadow:0 0 0 3px rgba(37,99,235,.12);}
+input[type="file"]{background:#fff;padding:8px 10px;display:flex;align-items:center;}
+select{background:#fff;}
+textarea{
+  width:100%;
+  min-height:72px;
+  padding:10px 12px;
+  resize:vertical;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+}
+textarea:focus{border-color:rgba(37,99,235,.45);box-shadow:0 0 0 3px rgba(37,99,235,.12);outline:none;}
+
+button{
+  border:1px solid transparent;
+  background:var(--btn);
+  color:var(--btnText);
+  cursor:pointer;
+  user-select:none;
+  -webkit-tap-highlight-color: transparent;
+}
+button.secondary{background:var(--btnAlt);color:var(--btnAltText);border-color:var(--border);}
+button:disabled{opacity:.55;cursor:not-allowed;}
+
+.badge{
+  font-size:12px;color:var(--muted);
+  padding:6px 10px;border:1px dashed var(--border);
+  border-radius:10px;background:rgba(255,255,255,0.65);
+  justify-self:end;
+}
+.small{font-size:12px;color:var(--muted);}
+
+.list{display:grid;gap:12px;margin-top:15px;}
+.card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:12px;}
+.cardHead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:8px;}
+.itemName{font-weight:700;}
+
+.sectionTitle{
+  font-weight:700;
+  font-size:13px;
+  margin:10px 0 6px 0;
+}
+.sectionSub{
+  font-size:12px;color:var(--muted);
+  margin:6px 0 0 0;
+}
+
+.timestamps{margin:0;padding-left:18px;font-size:13px;}
+.timestamps li{margin:6px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.tsText{flex:1 1 auto;min-width:180px;word-break:break-word;}
+.tsMeta{display:inline-flex;gap:8px;align-items:center;}
+
+.chip{font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--border);color:var(--muted);background:#fff;}
+.invalid .tsText{opacity:.55;text-decoration:line-through;}
+.invalid .chip{color:#7c2d12;border-color:#fed7aa;background:#fff7ed;}
+
+.flashNext{animation:flash 1.2s ease-out;}
+@keyframes flash{0%{background:#fde68a;}100%{background:transparent;}}
+
+/* Auto-backup controls */
+.toggleRow{display:flex;gap:10px;align-items:end;flex-wrap:wrap;}
+.togglePill{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 10px;border:1px solid var(--border);border-radius:12px;background:#fff;height:40px;
+}
+.togglePill input{transform:scale(1.05);}
+.numBox{width:110px;max-width:40vw;}
+
+/* Hold-to-reset */
+.holdButton{position:relative;overflow:hidden;}
+.holdProgress{position:absolute;left:0;top:0;bottom:0;width:0%;background:rgba(239,68,68,.35);pointer-events:none;}
+
+/* Edge iOS viewer: prevent long-press stealing the hold gesture */
+#resetItems{
+  -webkit-touch-callout:none;
+  user-select:none;
+  -webkit-user-select:none;
+  touch-action:none;
+}
+
+/* Modal (confirm + info) */
+#modal{
+  display:none;
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.35);
+  z-index:9999;
+  align-items:center;justify-content:center;
+  padding:16px;
+}
+#modalCard{
+  background:#fff;border:1px solid var(--border);border-radius:14px;
+  max-width:560px;width:100%;
+  padding:14px;
+}
+#modalTitle{font-weight:800;margin:0 0 8px 0;}
+#modalText{margin:0 0 12px 0;color:var(--text);}
+#modalActions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;}
+
+/* Export overlay (Edge-safe fallback) */
+#exportOverlay{
+  display:none;
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.35);
+  z-index:10000;
+  align-items:center;justify-content:center;
+  padding:16px;
+}
+#exportCard{
+  background:#fff;border:1px solid var(--border);border-radius:14px;
+  max-width:720px;width:100%;
+  padding:14px;
+}
+#exportTextarea{
+  width:100%;
+  height:50vh;
+  min-height:220px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:10px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+  font-size:12px;
+}
+
+/* Sensors UI */
+.sensorAssignRow{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+.sensorAssignRow select{flex:1 1 220px;}
+.sensorCard{
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:10px;
+  background:rgba(247,247,251,.6);
+  margin-top:8px;
+}
+.sensorCardHead{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+}
+.sensorId{
+  font-weight:700;
+  font-size:13px;
+}
+.sensorRemove{
+  height:32px;
+  padding:0 10px;
+}
+@media (max-width:780px){
+  .grid2{grid-template-columns:1fr;}
+  .actionsGrid{grid-template-columns:1fr;}
+  .backupGrid{grid-template-columns:1fr;}
+  .badge{justify-self:start;}
+  button{width:100%;}
+  .tsText{min-width:0;}
+  .numBox{width:100%;max-width:100%;}
+}
+
+  .groupBadge{
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:4px 10px;
+    border-radius:999px;
+    font-size:12px;
+    border:1px solid rgba(255,255,255,.14);
+    background:rgba(255,255,255,.06);
+    user-select:none;
+    white-space:nowrap;
+  }
+  .groupBadge:hover{ filter: brightness(0.97); }
+  .groupDot{
+    width:10px;height:10px;border-radius:999px;flex:0 0 10px;
+    border:1px solid rgba(0,0,0,.15);
+  }
+    .card.grouped{ border-left-width:8px; border-left-style:solid; }
+  textarea.sensorComment{ height: 2.2em; min-height: 2.2em; resize: vertical; }
+
+</style>
+</head>
+
+<body>
+<header>
+  <div class="wrap">
+    <h1>Measurement Timestamper</h1>
+
+    <div class="controls">
+
+      <div class="panel">
+        <label>Search</label>
+        <input id="search" type="text" placeholder="Filter IDs (case-insensitive)">
+      </div>
+
+      <div class="panel grid2">
+        <div>
+          <label>Import IDs (.txt)</label>
+          <input id="importTxt" type="file" accept=".txt,text/plain">
+        </div>
+        <div>
+          <label>Import JSON</label>
+          <input id="importJson" type="file" accept=".json,application/json">
+        </div>
+      </div>
+      <div class="panel grid2">
+        <div>
+          <label>Import Sensors (.txt)</label>
+          <input id="importSensorsTxt" type="file" accept=".txt,text/plain">
+        </div>
+        <div>
+          <label>Sensor list</label>
+          <span id="sensorStatus" class="badge" style="justify-self:start;">Sensors: 0</span>
+        </div>
+      </div>
+
+      <div class="panel grid2">
+        <div>
+          <label>Import Sensor Defaults (.txt)</label>
+          <input id="importSensorDefaultsTxt" type="file" accept=".txt,text/plain">
+        </div>
+        <div>
+          <label>Defaults import</label>
+          <span id="sensorDefaultsStatus" class="badge" style="justify-self:start;">No defaults imported</span>
+        </div>
+      </div>
+
+
+
+      <div class="panel actionsGrid">
+        <button id="exportJson" type="button">Export JSON</button>
+        <button id="resetTimestamps" class="secondary" type="button" disabled>Reset timestamps</button>
+
+        <button id="resetItems" class="secondary holdButton" type="button" aria-label="Hold 3 seconds to reset everything">
+          Hold 3s to reset items
+          <span class="holdProgress" id="holdProgress"></span>
+        </button>
+
+        <span id="resetStatus" class="badge">Reset timestamps disabled (export JSON first)</span>
+      </div>
+
+      <div class="panel">
+        <div class="toggleRow">
+          <div class="togglePill">
+            <span class="small" style="font-weight:700;color:var(--text);">Auto-backup</span>
+            <label class="small" style="display:flex;gap:8px;align-items:center;margin:0;">
+              <span>On</span>
+              <input id="autoBackupEnabled" type="checkbox">
+            </label>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:6px;min-width:140px;">
+            <label>Every N recordings</label>
+            <input id="backupEveryN" class="numBox" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="1">
+          </div>
+
+          <span id="sinceBackupBadge" class="badge" style="justify-self:start;">Since backup: 0</span>
+        </div>
+
+        <div class="small" style="margin-top:8px;">
+          Backups are stored locally (max 20). Import also creates an immediate backup.
+        </div>
+      </div>
+
+      <div class="panel backupGrid">
+        <button id="downloadLatestBackup" class="secondary" type="button" disabled>Latest backup</button>
+        <button id="downloadAllBackups" class="secondary" type="button" disabled>All backups</button>
+        <span id="backupStatus" class="badge">No backups yet</span>
+      </div>
+
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="list" class="list"></div>
+
+  <div class="card">
+    <div class="cardHead">
+      <div class="itemName">Add ID</div>
+    </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <input id="newId" type="text" placeholder="Enter ID" style="flex:1 1 260px;">
+      <button id="addBtn" class="secondary" type="button">Add</button>
+    </div>
+    <div class="small" style="margin-top:8px;">Duplicates are prevented. New IDs start empty.</div>
+  </div>
+</main>
+
+<!-- Confirm/info modal -->
+<div id="modal">
+  <div id="modalCard">
+    <p id="modalTitle">Confirm</p>
+    <p id="modalText"></p>
+    <div id="modalActions">
+      <button id="modalCancel" class="secondary" type="button">Cancel</button>
+      <button id="modalOk" type="button">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- Export overlay (Edge-safe fallback when download/share blocked) -->
+<div id="exportOverlay">
+  <div id="exportCard">
+    <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;">
+      <div id="exportTitle" style="font-weight:800;">Export</div>
+      <button id="exportClose" class="secondary" type="button">Close</button>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin:10px 0;">
+      <button id="exportCopy" type="button">Copy JSON</button>
+    </div>
+
+    <textarea id="exportTextarea" readonly></textarea>
+
+    <div class="small" style="margin-top:10px;">
+      If download is blocked, tap “Copy JSON”, paste into Notes, then Share → Save to Files.
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ===== Sensors =====
+  // Sensors are loaded from a plain text file (one sensor name per line).
+  // If no file has been imported yet, the app uses DEFAULT_sensorIds.
+  const DEFAULT_sensorIds = ["Sensor-01","Sensor-02","Sensor-03","Sensor-04"];
+  let sensorIds = DEFAULT_sensorIds.slice();
+
+  const DEFAULT_IDS = [];                 // empty default
+  const MAX_BACKUPS = 20;
+  const HOLD_TIME_MS = 3000;
+  const DEFAULT_BACKUP_EVERY_N = 1;
+
+  const LS = {
+    names: "mt_names",
+    data: "mt_data",
+    sensors: "mt_sensors",           // { id: { sensorId: { comment } } }
+    groups: "mt_groups",
+    sensorList: "mt_sensorList",      // ["Sensor-01", ...]
+    backups: "mt_backups",
+    exported: "mt_exported",
+    autoBackupEnabled: "mt_autoBackupEnabled",
+    backupEveryN: "mt_backupEveryN",
+    sinceBackup: "mt_sinceBackup"
+  };
+
+  // State
+  let names = [];
+  let data = {};      // { id: [ {ts, valid}, ... ] }
+  let sensors = {};   // { id: { sensorId: { comment } } }
+  let groups = {};    // { id: "GroupName" }
+  let backups = [];   // [{createdAtIso, reason, names, data, sensors, groups}, ...]
+  let exported = false;
+
+  let autoBackupEnabled = true;
+  let backupEveryN = DEFAULT_BACKUP_EVERY_N;
+  let sinceBackup = 0;
+
+  // Elements
+  const elSearch = document.getElementById("search");
+  const elImportTxt = document.getElementById("importTxt");
+  const elImportSensorsTxt = document.getElementById("importSensorsTxt");
+  const elImportSensorDefaultsTxt = document.getElementById("importSensorDefaultsTxt");
+  const elSensorDefaultsStatus = document.getElementById("sensorDefaultsStatus");
+  const elImportJson = document.getElementById("importJson");
+  const elExportJson = document.getElementById("exportJson");
+  const elResetTimestamps = document.getElementById("resetTimestamps");
+  const elResetItems = document.getElementById("resetItems");
+  const elResetStatus = document.getElementById("resetStatus");
+
+  const elSensorStatus = document.getElementById("sensorStatus");
+
+  const elAutoBackupEnabled = document.getElementById("autoBackupEnabled");
+  const elBackupEveryN = document.getElementById("backupEveryN");
+  const elSinceBackupBadge = document.getElementById("sinceBackupBadge");
+
+  const elDownloadLatestBackup = document.getElementById("downloadLatestBackup");
+  const elDownloadAllBackups = document.getElementById("downloadAllBackups");
+  const elBackupStatus = document.getElementById("backupStatus");
+
+  const elList = document.getElementById("list");
+  const elNewId = document.getElementById("newId");
+  const elAddBtn = document.getElementById("addBtn");
+
+  const elHoldProgress = document.getElementById("holdProgress");
+
+  // Modal
+  const modal = document.getElementById("modal");
+  const modalTitle = document.getElementById("modalTitle");
+  const modalText = document.getElementById("modalText");
+  const modalOk = document.getElementById("modalOk");
+  const modalCancel = document.getElementById("modalCancel");
+
+  // Export overlay
+  const exportOverlay = document.getElementById("exportOverlay");
+  const exportTitle = document.getElementById("exportTitle");
+  const exportTextarea = document.getElementById("exportTextarea");
+  const exportCopy = document.getElementById("exportCopy");
+  const exportClose = document.getElementById("exportClose");
+
+  function sanitizeDomId(s){
+    const clean = String(s || "").replace(/[^a-zA-Z0-9]/g, "");
+    return clean || "Item";
+  }
+
+  function hashHue(str){
+    // deterministic hue 0..359
+    const s = String(str || "");
+    let h = 0;
+    for (let i=0;i<s.length;i++){
+      h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    }
+    return h % 360;
+  }
+
+  
+  const GROUP_COLORS = [
+    "#e6194b","#3cb44b","#ffe119","#4363d8","#f58231",
+    "#911eb4","#46f0f0","#f032e6","#bcf60c","#fabebe",
+    "#008080","#e6beff","#9a6324","#ccb860","#800000",
+    "#aaffc3","#808000","#ffd8b1","#000075","#808080"
+  ];
+
+const assignedColors = {};
+
+function groupColor(group){
+    const g = String(group || "").trim();
+    if (!g) return "";
+    if (assignedColors[g]) return assignedColors[g];
+
+    const usedIndices = new Set(Object.values(assignedColors)
+        .map(c => GROUP_COLORS.indexOf(c)));
+
+    let idx = Math.abs(hashHue(g)) % GROUP_COLORS.length;
+    while (usedIndices.has(idx)) {
+        idx = (idx + 1) % GROUP_COLORS.length;
+    }
+    assignedColors[g] = GROUP_COLORS[idx];
+    return assignedColors[g];
+}
+
+  function setGroup(id, value){
+    ensureIdStructures(id);
+    groups[id] = String(value || "");
+    save();
+    render();
+  }
+
+  function normalizeEntry(entry){
+    if (typeof entry === "string") return { ts: entry, valid: true };
+    if (entry && typeof entry === "object"){
+      return { ts: String(entry.ts || ""), valid: entry.valid === false ? false : true };
+    }
+    return { ts: "", valid: true };
+  }
+
+  function normalizeDataObject(obj){
+    const out = {};
+    Object.keys(obj || {}).forEach(k => {
+      const arr = Array.isArray(obj[k]) ? obj[k] : [];
+      out[k] = arr.map(normalizeEntry).filter(x => x.ts);
+    });
+    return out;
+  }
+
+  function normalizeSensorsObject(obj){
+    const out = {};
+    if (!obj || typeof obj !== "object" || Array.isArray(obj)) return out;
+    Object.keys(obj).forEach(id => {
+      const per = obj[id];
+      if (!per || typeof per !== "object" || Array.isArray(per)) return;
+      out[id] = {};
+      Object.keys(per).forEach(sensorId => {
+        const v = per[sensorId];
+        const comment = (v && typeof v === "object") ? String(v.comment || "") : "";
+        out[id][sensorId] = { comment };
+      });
+    });
+    return out;
+  }
+
+  function tryParseInt(v, fallback){
+    const n = Number(String(v).trim());
+    if (!Number.isFinite(n)) return fallback;
+    const i = Math.floor(n);
+    return i > 0 ? i : fallback;
+  }
+
+  function ensureIdStructures(id){
+    if (!Array.isArray(data[id])) data[id] = [];
+    if (!sensors[id] || typeof sensors[id] !== "object" || Array.isArray(sensors[id])) sensors[id] = {};
+    if (groups[id] === undefined || groups[id] === null) groups[id] = "";
+  }
+
+  function save(){
+    localStorage.setItem(LS.names, JSON.stringify(names));
+    localStorage.setItem(LS.data, JSON.stringify(data));
+    localStorage.setItem(LS.sensors, JSON.stringify(sensors));
+    localStorage.setItem(LS.groups, JSON.stringify(groups));
+    localStorage.setItem(LS.sensorList, JSON.stringify(sensorIds));
+    localStorage.setItem(LS.backups, JSON.stringify(backups));
+    localStorage.setItem(LS.exported, exported ? "true" : "false");
+
+    localStorage.setItem(LS.autoBackupEnabled, autoBackupEnabled ? "true" : "false");
+    localStorage.setItem(LS.backupEveryN, String(backupEveryN));
+    localStorage.setItem(LS.sinceBackup, String(sinceBackup));
+  }
+
+  function load(){
+    try{
+      const n = JSON.parse(localStorage.getItem(LS.names) || "null");
+      names = Array.isArray(n) ? n : DEFAULT_IDS.slice();
+
+      const dRaw = JSON.parse(localStorage.getItem(LS.data) || "null");
+      data = (dRaw && typeof dRaw === "object" && !Array.isArray(dRaw)) ? normalizeDataObject(dRaw) : {};
+
+      const sRaw = JSON.parse(localStorage.getItem(LS.sensors) || "null");
+      sensors = normalizeSensorsObject(sRaw);
+
+
+      const gRaw = JSON.parse(localStorage.getItem(LS.groups) || "null");
+      groups = (gRaw && typeof gRaw === "object" && !Array.isArray(gRaw)) ? gRaw : {};
+      // normalize to string
+      Object.keys(groups).forEach(k => { groups[k] = String(groups[k] ?? ""); });
+
+      const sl = JSON.parse(localStorage.getItem(LS.sensorList) || "null");
+      sensorIds = Array.isArray(sl) ? sl.map(x => String(x).trim()).filter(Boolean) : DEFAULT_sensorIds.slice();
+      if (!sensorIds.length) sensorIds = DEFAULT_sensorIds.slice();
+
+      const b = JSON.parse(localStorage.getItem(LS.backups) || "null");
+      backups = Array.isArray(b) ? b : [];
+      backups = backups.filter(x => x && typeof x === "object" && typeof x.createdAtIso === "string").slice(-MAX_BACKUPS);
+
+      exported = localStorage.getItem(LS.exported) === "true";
+
+      autoBackupEnabled = localStorage.getItem(LS.autoBackupEnabled);
+      autoBackupEnabled = autoBackupEnabled === null ? true : (autoBackupEnabled === "true");
+
+      backupEveryN = tryParseInt(localStorage.getItem(LS.backupEveryN), DEFAULT_BACKUP_EVERY_N);
+      sinceBackup = tryParseInt(localStorage.getItem(LS.sinceBackup), 0);
+
+      // ensure shape
+      names.forEach(id => ensureIdStructures(id));
+      Object.keys(data).forEach(k => { if (!names.includes(k)) delete data[k]; });
+      Object.keys(sensors).forEach(k => { if (!names.includes(k)) delete sensors[k]; });
+      Object.keys(groups).forEach(k => { if (!names.includes(k)) delete groups[k]; });
+
+    }catch{
+      names = DEFAULT_IDS.slice();
+      data = {};
+      sensors = {};
+    sensorIds = DEFAULT_SENSOR_IDS.slice();
+      sensorIds = DEFAULT_sensorIds.slice();
+      backups = [];
+      exported = false;
+      autoBackupEnabled = true;
+      backupEveryN = DEFAULT_BACKUP_EVERY_N;
+      sinceBackup = 0;
+    }
+
+    elAutoBackupEnabled.checked = autoBackupEnabled;
+    elBackupEveryN.value = String(backupEveryN);
+
+    updateResetUI();
+    updateBackupUI();
+    updateSinceBadge();
+    updateSensorStatus();
+    save();
+  }
+
+  function updateSinceBadge(){
+    elSinceBackupBadge.textContent = `Since backup: ${sinceBackup}`;
+  }
+
+
+  function updateSensorStatus(){
+    if (!elSensorStatus) return;
+    elSensorStatus.textContent = `Sensors: ${sensorIds.length}`;
+  }
+
+  function updateResetUI(){
+    elResetTimestamps.disabled = !exported;
+    elResetStatus.textContent = exported
+      ? "Reset timestamps enabled"
+      : "Reset timestamps disabled (export JSON first)";
+  }
+
+  function updateBackupUI(){
+    if (!backups.length){
+      elBackupStatus.textContent = "No backups yet";
+      elDownloadLatestBackup.disabled = true;
+      elDownloadAllBackups.disabled = true;
+      return;
+    }
+    const latest = backups[backups.length - 1];
+    elBackupStatus.textContent = `Backups: ${backups.length} • Last: ${new Date(latest.createdAtIso).toLocaleString()}`;
+    elDownloadLatestBackup.disabled = false;
+    elDownloadAllBackups.disabled = false;
+  }
+
+  function showInfo(message){
+    modalTitle.textContent = "Info";
+    modalText.textContent = message;
+    modal.style.display = "flex";
+    modalCancel.style.display = "none";
+
+    return new Promise(resolve => {
+      const done = () => {
+        modal.style.display = "none";
+        modalOk.onclick = null;
+        resolve(true);
+      };
+      modalOk.onclick = done;
+    });
+  }
+
+  function confirmModal(message){
+    modalTitle.textContent = "Confirm";
+    modalText.textContent = message;
+    modal.style.display = "flex";
+    modalCancel.style.display = "";
+
+    return new Promise(resolve => {
+      const cleanup = (val) => {
+        modal.style.display = "none";
+        modalOk.onclick = null;
+        modalCancel.onclick = null;
+        resolve(val);
+      };
+      modalOk.onclick = () => cleanup(true);
+      modalCancel.onclick = () => cleanup(false);
+    });
+  }
+
+  function showExportOverlay(filename, jsonText){
+    exportTitle.textContent = filename;
+    exportTextarea.value = jsonText;
+    exportOverlay.style.display = "flex";
+
+    const close = () => {
+      exportOverlay.style.display = "none";
+      exportCopy.onclick = null;
+      exportClose.onclick = null;
+    };
+
+    exportClose.onclick = close;
+
+    exportCopy.onclick = async () => {
+      try{
+        await navigator.clipboard.writeText(exportTextarea.value);
+        exportCopy.textContent = "Copied!";
+        setTimeout(()=> exportCopy.textContent = "Copy JSON", 900);
+      }catch{
+        exportTextarea.focus();
+        exportTextarea.select();
+        exportCopy.textContent = "Select & Copy";
+        setTimeout(()=> exportCopy.textContent = "Copy JSON", 1200);
+      }
+    };
+  }
+
+  async function exportJson(filename, obj){
+    const jsonText = JSON.stringify(obj, null, 2);
+
+    // 1) Share sheet (best on iPhone)
+    try{
+      if (navigator.share && window.File){
+        const file = new File([jsonText], filename, { type: "application/json" });
+        await navigator.share({ files: [file], title: filename, text: "JSON export" });
+        return;
+      }
+    }catch(_e){ /* cancelled or blocked */ }
+
+    // 2) Classic download
+    try{
+      const blob = new Blob([jsonText], {type:"application/json"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url), 2000);
+      return;
+    }catch(_e){ /* blocked */ }
+
+    // 3) Always-works fallback
+    showExportOverlay(filename, jsonText);
+  }
+
+  function makeBackup(reason){
+    const snapNames = names.slice();
+
+    const snapData = {};
+    snapNames.forEach(id => {
+      const arr = Array.isArray(data[id]) ? data[id].map(normalizeEntry).filter(x => x.ts) : [];
+      snapData[id] = arr.map(x => ({ ts:x.ts, valid:x.valid }));
+    });
+
+    const snapSensors = {};
+    snapNames.forEach(id => {
+      const per = sensors[id] && typeof sensors[id] === "object" && !Array.isArray(sensors[id]) ? sensors[id] : {};
+      snapSensors[id] = {};
+      Object.keys(per).forEach(sensorId => {
+        const comment = String((per[sensorId] && per[sensorId].comment) || "");
+        snapSensors[id][sensorId] = { comment };
+      });
+    });
+
+    backups.push({
+      createdAtIso: new Date().toISOString(),
+      reason: String(reason || "auto"),
+      names: snapNames,
+      data: snapData,
+      sensors: snapSensors,
+      groups: Object.fromEntries(snapNames.map(id => [id, String(groups[id] || "")]))
+    });
+
+    if (backups.length > MAX_BACKUPS) backups = backups.slice(-MAX_BACKUPS);
+    sinceBackup = 0;
+    save();
+    updateBackupUI();
+    updateSinceBadge();
+  }
+
+  function maybeAutoBackup(){
+    if (!autoBackupEnabled) return;
+    if (backupEveryN <= 0) return;
+
+    if (sinceBackup >= backupEveryN){
+      makeBackup(`auto:${backupEveryN}`);
+    }else{
+      save();
+      updateSinceBadge();
+    }
+  }
+
+  function getAvailableSensorsForId(id){
+    const assigned = sensors[id] || {};
+    return sensorIds.filter(sid => !assigned[sid]);
+  }
+
+  function render(){
+    const q = (elSearch.value || "").trim().toLowerCase();
+    const visible = q ? names.filter(n => n.toLowerCase().includes(q)) : names.slice();
+
+    elList.innerHTML = "";
+    visible.forEach(id => {
+      ensureIdStructures(id);
+
+      const card = document.createElement("div");
+      card.className = "card";
+      card.id = "item_" + sanitizeDomId(id);
+
+      const head = document.createElement("div");
+      head.className = "cardHead";
+
+      const title = document.createElement("div");
+      title.className = "itemName";
+      title.textContent = id;
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = "Record Timestamp";
+      btn.onclick = () => record(id);
+
+      // Group UI
+      const groupWrap = document.createElement("div");
+      groupWrap.style.display = "flex";
+      groupWrap.style.alignItems = "center";
+      groupWrap.style.gap = "10px";
+      groupWrap.style.flexWrap = "wrap";
+
+      const groupVal = String(groups[id] || "").trim();
+      const color = groupColor(groupVal);
+
+      const groupBadge = document.createElement("span");
+      groupBadge.className = "groupBadge";
+      groupBadge.title = "Group (color-coded)";
+
+      const dot = document.createElement("span");
+      dot.className = "groupDot";
+      dot.style.background = color || "transparent";
+      dot.style.borderColor = color ? "rgba(0,0,0,.2)" : "rgba(255,255,255,.18)";
+
+      const label = document.createElement("span");
+      label.textContent = groupVal ? `Group: ${groupVal}` : "Group: (none)";
+
+      groupBadge.append(dot, label);
+
+      // Click group pill to edit (keeps UI uncluttered)
+      groupBadge.style.cursor = "pointer";
+      groupBadge.addEventListener("click", () => {
+        const next = prompt(`Set group for "${id}" (leave blank for none)`, groupVal);
+        if (next === null) return;
+        setGroup(id, next);
+      });
+
+      groupWrap.append(groupBadge);
+
+      head.append(title, groupWrap, btn);
+
+      if (groupVal){
+        card.classList.add("grouped");
+        card.style.borderLeftColor = color;
+      }else{
+        card.classList.remove("grouped");
+        card.style.borderLeftColor = "";
+      }
+
+      const body = document.createElement("div");
+
+      // --- Timestamps ---
+      const tsTitle = document.createElement("div");
+      tsTitle.className = "sectionTitle";
+      tsTitle.textContent = "Timestamps";
+      body.appendChild(tsTitle);
+
+      const arr = Array.isArray(data[id]) ? data[id].map(normalizeEntry).filter(x => x.ts) : [];
+
+      if (!arr.length){
+        const p = document.createElement("p");
+        p.className = "small";
+        p.textContent = "No timestamps";
+        body.appendChild(p);
+      }else{
+        const ul = document.createElement("ul");
+        ul.className = "timestamps";
+
+        arr.forEach((entry, idx) => {
+          const li = document.createElement("li");
+          if (!entry.valid) li.classList.add("invalid");
+
+          const text = document.createElement("span");
+          text.className = "tsText";
+          const d = new Date(entry.ts);
+          text.textContent = Number.isNaN(d.getTime()) ? entry.ts : d.toLocaleString();
+
+          const meta = document.createElement("span");
+          meta.className = "tsMeta";
+
+          if (!entry.valid){
+            const chip = document.createElement("span");
+            chip.className = "chip";
+            chip.textContent = "Invalid";
+            meta.appendChild(chip);
+          }
+
+          const toggle = document.createElement("button");
+          toggle.type = "button";
+          toggle.className = "secondary";
+          toggle.style.height = "32px";
+          toggle.style.padding = "0 10px";
+          toggle.textContent = entry.valid ? "Mark invalid" : "Mark valid";
+          toggle.onclick = () => toggleValid(id, idx);
+
+          meta.appendChild(toggle);
+
+          li.append(text, meta);
+          ul.appendChild(li);
+        });
+
+        body.appendChild(ul);
+      }
+
+      // --- Sensors ---
+      const sensorsTitle = document.createElement("div");
+      sensorsTitle.className = "sectionTitle";
+      sensorsTitle.textContent = "Sensors";
+      body.appendChild(sensorsTitle);
+
+      const assignRow = document.createElement("div");
+      assignRow.className = "sensorAssignRow";
+
+      const sel = document.createElement("select");
+      const available = getAvailableSensorsForId(id);
+      const opt0 = document.createElement("option");
+      opt0.value = "";
+      opt0.textContent = available.length ? "Select sensor to assign..." : "All sensors assigned";
+      sel.appendChild(opt0);
+      available.forEach(sensorId => {
+        const o = document.createElement("option");
+        o.value = sensorId;
+        o.textContent = sensorId;
+        sel.appendChild(o);
+      });
+
+      const addSensorBtn = document.createElement("button");
+      addSensorBtn.type = "button";
+      addSensorBtn.className = "secondary";
+      addSensorBtn.textContent = "Assign";
+      addSensorBtn.disabled = available.length === 0;
+
+      addSensorBtn.onclick = () => {
+        const sensorId = sel.value;
+        if (!sensorId) return;
+        assignSensor(id, sensorId);
+      };
+
+      assignRow.appendChild(sel);
+      assignRow.appendChild(addSensorBtn);
+      body.appendChild(assignRow);
+
+      const assignedIds = Object.keys(sensors[id] || {}).sort();
+      if (!assignedIds.length){
+        const p = document.createElement("p");
+        p.className = "small";
+        p.textContent = "No sensors assigned.";
+        body.appendChild(p);
+      }else{
+        assignedIds.forEach(sensorId => {
+          const box = document.createElement("div");
+          box.className = "sensorCard";
+
+          const top = document.createElement("div");
+          top.className = "sensorCardHead";
+
+          const sid = document.createElement("div");
+          sid.className = "sensorId";
+          sid.textContent = sensorId;
+
+          if (!sensorIds.includes(sensorId)){
+            const miss = document.createElement("span");
+            miss.className = "chip";
+            miss.textContent = "Not in list";
+            sid.appendChild(document.createTextNode(" "));
+            sid.appendChild(miss);
+          }
+
+          const rm = document.createElement("button");
+          rm.type = "button";
+          rm.className = "secondary sensorRemove";
+          rm.textContent = "Unassign";
+          rm.onclick = () => unassignSensor(id, sensorId);
+
+          top.appendChild(sid);
+          top.appendChild(rm);
+
+          const ta = document.createElement("textarea");
+          ta.className = "sensorComment";
+          ta.rows = 1;
+          ta.placeholder = "Comment for this sensor (saved automatically)";
+          ta.value = String((sensors[id][sensorId] && sensors[id][sensorId].comment) || "");
+          ta.addEventListener("input", () => {
+            setSensorComment(id, sensorId, ta.value);
+          });
+
+          box.appendChild(top);
+          box.appendChild(ta);
+          body.appendChild(box);
+        });
+      }
+
+      const note = document.createElement("p");
+      note.className = "sectionSub";
+      note.textContent = "Assign sensors from the loaded sensor list. Each assigned sensor can have its own comment.";
+      body.appendChild(note);
+
+      card.append(head, body);
+      elList.appendChild(card);
+    });
+  }
+
+  function record(id){
+    ensureIdStructures(id);
+    data[id].push({ ts: new Date().toISOString(), valid: true });
+    sinceBackup += 1;
+
+    save();
+    render();
+
+    // auto-next (full list order)
+    const idx = names.indexOf(id);
+    if (idx > -1 && idx < names.length - 1){
+      const nextId = names[idx + 1];
+      const nextEl = document.getElementById("item_" + sanitizeDomId(nextId));
+      if (nextEl){
+        try{ nextEl.scrollIntoView({behavior:"smooth", block:"start"}); }
+        catch{ nextEl.scrollIntoView(true); }
+        nextEl.classList.remove("flashNext");
+        void nextEl.offsetWidth;
+        nextEl.classList.add("flashNext");
+        setTimeout(() => nextEl.classList.remove("flashNext"), 1200);
+      }
+    }
+
+    maybeAutoBackup();
+  }
+
+  function toggleValid(id, index){
+    ensureIdStructures(id);
+    data[id] = data[id].map(normalizeEntry).filter(x => x.ts);
+    if (!data[id][index]) return;
+    data[id][index].valid = !data[id][index].valid;
+    save();
+    render();
+  }
+
+  function assignSensor(id, sensorId){
+    ensureIdStructures(id);
+    if (!sensorIds.includes(sensorId)) return;
+    if (sensors[id][sensorId]) return;
+    sensors[id][sensorId] = { comment: "" };
+    save();
+    render();
+    makeBackup("manual:assign_sensor");
+  }
+
+  function unassignSensor(id, sensorId){
+    ensureIdStructures(id);
+    if (!sensors[id][sensorId]) return;
+    delete sensors[id][sensorId];
+    save();
+    render();
+    makeBackup("manual:unassign_sensor");
+  }
+
+  function setSensorComment(id, sensorId, comment){
+    ensureIdStructures(id);
+    if (!sensors[id][sensorId]) sensors[id][sensorId] = { comment: "" };
+    sensors[id][sensorId].comment = String(comment || "");
+    save();
+  }
+
+  async function addId(){
+    const v = (elNewId.value || "").trim();
+    if (!v) return;
+    if (names.includes(v)){
+      await showInfo("That ID already exists.");
+      return;
+    }
+    names.push(v);
+    ensureIdStructures(v);
+    elNewId.value = "";
+    save();
+    render();
+  }
+
+  // ===== Import / Export (backward compatible) =====
+  function buildExportObject(){
+    // New format (v4) including sensors.
+    const items = {};
+    names.forEach(id => {
+      ensureIdStructures(id);
+      const ts = (data[id] || []).map(normalizeEntry).filter(x => x.ts).map(x => ({ ts:x.ts, valid:x.valid }));
+      const sens = {};
+      const per = sensors[id] || {};
+      Object.keys(per).forEach(sensorId => {
+        sens[sensorId] = { comment: String((per[sensorId] && per[sensorId].comment) || "") };
+      });
+      items[id] = { group: String(groups[id] || ""), timestamps: ts, sensors: sens };
+    });
+    return {
+      version: 4,
+      exportedAt: new Date().toISOString(),
+      items
+    };
+  }
+
+  function importFromObject(obj){
+    // Accept either:
+    // - v4: {version, items: {ID: {timestamps:[], sensors:{}}}}
+    // - legacy: {ID: [ "iso" | {ts,valid} ]}
+    // - legacy2: {ID: {timestamps:[], sensors:{}}} (no wrapper)
+    if (obj && typeof obj === "object" && !Array.isArray(obj)){
+      if (obj.items && typeof obj.items === "object" && !Array.isArray(obj.items)){
+        // v4
+        const items = obj.items;
+        names = Object.keys(items);
+        data = {};
+        sensors = {};
+        names.forEach(id => {
+          const rec = items[id] || {};
+          const tsArr = Array.isArray(rec.timestamps) ? rec.timestamps : [];
+          data[id] = tsArr.map(normalizeEntry).filter(x => x.ts);
+          const sensObj = rec.sensors && typeof rec.sensors === "object" && !Array.isArray(rec.sensors) ? rec.sensors : {};
+          sensors[id] = {};
+          Object.keys(sensObj).forEach(sid => {
+            sensors[id][sid] = { comment: String((sensObj[sid] && sensObj[sid].comment) || "") };
+          });
+        });
+        return true;
+      }
+
+      // legacy2 (ID -> {timestamps, sensors})
+      const keys = Object.keys(obj);
+      const looksLikeLegacy2 = keys.some(k => obj[k] && typeof obj[k] === "object" && !Array.isArray(obj[k]) && ("timestamps" in obj[k] || "sensors" in obj[k]));
+      if (looksLikeLegacy2){
+        names = keys;
+        data = {};
+        sensors = {};
+        names.forEach(id => {
+          const rec = obj[id] || {};
+          const tsArr = Array.isArray(rec.timestamps) ? rec.timestamps : [];
+          data[id] = tsArr.map(normalizeEntry).filter(x => x.ts);
+          const sensObj = rec.sensors && typeof rec.sensors === "object" && !Array.isArray(rec.sensors) ? rec.sensors : {};
+          sensors[id] = {};
+          Object.keys(sensObj).forEach(sid => {
+            sensors[id][sid] = { comment: String((sensObj[sid] && sensObj[sid].comment) || "") };
+          });
+        });
+        return true;
+      }
+
+      // legacy (ID -> timestamps array)
+      const allArrays = keys.every(k => Array.isArray(obj[k]));
+      if (allArrays){
+        names = keys;
+        data = normalizeDataObject(obj);
+        sensors = {};
+        names.forEach(id => { sensors[id] = {}; });
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // ===== Events =====
+  elSearch.addEventListener("input", render);
+
+  elAddBtn.addEventListener("click", () => { addId().catch(()=>{}); });
+  elNewId.addEventListener("keydown", (e) => {
+    if (e.key === "Enter"){ e.preventDefault(); addId().catch(()=>{}); }
+  });
+
+  elAutoBackupEnabled.addEventListener("change", () => {
+    autoBackupEnabled = !!elAutoBackupEnabled.checked;
+    save();
+  });
+
+  elBackupEveryN.addEventListener("input", () => {
+    backupEveryN = tryParseInt(elBackupEveryN.value, DEFAULT_BACKUP_EVERY_N);
+    elBackupEveryN.value = String(backupEveryN);
+    save();
+  });
+
+  elExportJson.addEventListener("click", () => {
+    // Export unlock
+    exported = true;
+    save();
+    updateResetUI();
+
+    const obj = buildExportObject();
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    exportJson(`measurement_timestamper_${stamp}.json`, obj).catch(()=>{});
+  });
+
+  elResetTimestamps.addEventListener("click", async () => {
+    if (!exported) return;
+    const ok = await confirmModal("Clear timestamps only? (IDs and sensor assignments stay)");
+    if (!ok) return;
+    names.forEach(id => { ensureIdStructures(id); data[id] = []; });
+    sinceBackup = 0;
+    save();
+    render();
+    makeBackup("manual:reset_timestamps");
+  });
+
+
+  elImportSensorsTxt.addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    try{
+      const text = await file.text();
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+
+      const seen = new Set();
+      const unique = [];
+      for (const sid of lines){
+        if (!seen.has(sid)){ seen.add(sid); unique.push(sid); }
+      }
+
+      if (!unique.length){
+        await showInfo("No sensors found in that file (it must contain one sensor name per line).");
+        return;
+      }
+
+      sensorIds = unique;
+      save();
+      updateSensorStatus();
+      render();
+      makeBackup("import:sensors_txt");
+    }catch{
+      await showInfo("Could not read the sensors .txt file.");
+    }finally{
+      e.target.value = "";
+    }
+  });
+  // Import default assignments + comments
+  // Supported formats (one per line):
+  // 1) ID<TAB>SensorId<TAB>Comment  (preferred; TAB, |, ;, or , accepted)
+  // 2) SensorId<TAB>Comment         (applies comment to that sensor across all IDs where assigned)
+  elImportSensorDefaultsTxt.addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    try{
+      const text = await file.text();
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+
+      const splitLine = (line) => {
+        // try TAB first, else common delimiters
+        if (line.includes("\t")) return line.split(/\t+/);
+        if (line.includes("|")) return line.split("|");
+        if (line.includes(";")) return line.split(";");
+        // comma last (comments may include commas; we only split first 2)
+        const parts = line.split(",");
+        if (parts.length <= 3) return parts;
+        return [parts[0], parts[1], parts.slice(2).join(",")];
+      };
+
+      let applied = 0;
+      let created = 0;
+      let skipped = 0;
+
+      lines.forEach(line => {
+        const parts = splitLine(line).map(x => String(x ?? "").trim());
+        if (parts.length >= 3){
+          const id = parts[0];
+          const sensorId = parts[1];
+          const comment = parts.slice(2).join(" ").trim();
+          if (!id || !sensorId) { skipped++; return; }
+          if (!names.includes(id)) { skipped++; return; }
+          if (!sensorIds.includes(sensorId)) { skipped++; return; }
+
+          ensureIdStructures(id);
+          if (!sensors[id][sensorId]){
+            sensors[id][sensorId] = { comment: "" };
+            created++;
+          }
+          sensors[id][sensorId].comment = comment;
+          applied++;
+        }else if (parts.length === 2){
+          const sensorId = parts[0];
+          const comment = parts[1];
+          if (!sensorId) { skipped++; return; }
+          if (!sensorIds.includes(sensorId)) { skipped++; return; }
+          names.forEach(id => {
+            ensureIdStructures(id);
+            if (sensors[id][sensorId]){
+              sensors[id][sensorId].comment = comment;
+              applied++;
+            }
+          });
+        }else{
+          skipped++;
+        }
+      });
+
+      save();
+      render();
+      makeBackup("import:sensorDefaults");
+
+      if (elSensorDefaultsStatus){
+        elSensorDefaultsStatus.textContent = `Defaults imported: ${applied} updated, ${created} created, ${skipped} skipped`;
+      }
+    }catch{
+      await showInfo("Could not read the sensor defaults .txt file.");
+      if (elSensorDefaultsStatus) elSensorDefaultsStatus.textContent = "No defaults imported";
+    }finally{
+      e.target.value = "";
+    }
+  });
+
+
+
+  elImportTxt.addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    try{
+      const text = await file.text();
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+
+      const seen = new Set();
+      const unique = [];
+      const importedGroups = {};
+      for (const raw of lines){
+        // Format: ID[,Group]
+        const parts = raw.split(",");
+        const id = (parts[0] || "").trim();
+        const group = parts.length > 1 ? parts.slice(1).join(",").trim() : "";
+        if (!id) continue;
+        if (!seen.has(id)){
+          seen.add(id);
+          unique.push(id);
+        }
+        // If a group is provided multiple times for same ID, last wins
+        if (group) importedGroups[id] = group;
+      }
+
+      names = unique;
+      data = {};
+      sensors = {};
+      groups = {};
+      names.forEach(id => { data[id] = []; sensors[id] = {}; groups[id] = String(importedGroups[id] || ""); });
+      sinceBackup = 0;
+
+      save();
+      render();
+      makeBackup("import:txt");
+    }catch{
+      await showInfo("Could not read the .txt file.");
+    }finally{
+      e.target.value = "";
+    }
+  });
+
+  elImportJson.addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    try{
+      const obj = JSON.parse(await file.text());
+      const ok = importFromObject(obj);
+      if (!ok) throw new Error("Unsupported JSON shape");
+
+      // normalize + shape
+      names.forEach(id => ensureIdStructures(id));
+      Object.keys(data).forEach(k => { if (!names.includes(k)) delete data[k]; });
+      Object.keys(sensors).forEach(k => { if (!names.includes(k)) delete sensors[k]; });
+
+      sinceBackup = 0;
+      save();
+      render();
+      makeBackup("import:json");
+    }catch{
+      await showInfo("Could not import JSON (invalid file or unsupported format).");
+    }finally{
+      e.target.value = "";
+    }
+  });
+
+  elDownloadLatestBackup.addEventListener("click", async () => {
+    if (!backups.length) return;
+    const latest = backups[backups.length - 1];
+    const stamp = String(latest.createdAtIso).replace(/[:.]/g, "-");
+    await exportJson(`auto_backup_${stamp}.json`, latest);
+  });
+
+  elDownloadAllBackups.addEventListener("click", async () => {
+    if (!backups.length){
+      await showInfo("No backups stored yet. Record timestamps (or import) to generate backups.");
+      return;
+    }
+    await exportJson("all_auto_backups.json", {
+      exportedAt: new Date().toISOString(),
+      backupCount: backups.length,
+      backups
+    });
+  });
+
+  // Prevent context menu stealing hold gesture (Edge iOS)
+  elResetItems.addEventListener("contextmenu", (e) => e.preventDefault());
+
+  // Hold-to-reset items (Edge-safe)
+  let holdRAF = null;
+  let holdStart = null;
+  let holding = false;
+
+  function stopHold(){
+    holding = false;
+    holdStart = null;
+    if (holdRAF) cancelAnimationFrame(holdRAF);
+    holdRAF = null;
+    elHoldProgress.style.width = "0%";
+  }
+
+  async function performResetItems(){
+    const ok = await confirmModal("Final confirmation: erase ALL items, timestamps, sensor assignments and backups?");
+    if (!ok) return;
+
+    names = DEFAULT_IDS.slice();
+    data = {};
+    sensors = {};
+    backups = [];
+    exported = false;
+    sinceBackup = 0;
+
+    autoBackupEnabled = true;
+    backupEveryN = DEFAULT_BACKUP_EVERY_N;
+
+    save();
+    // reload for iOS/Edge storage consistency
+    setTimeout(() => location.reload(), 80);
+  }
+
+  function tick(){
+    if (!holding || !holdStart) return;
+
+    const elapsed = Date.now() - holdStart;
+    const pct = Math.min(elapsed / HOLD_TIME_MS, 1) * 100;
+    elHoldProgress.style.width = pct + "%";
+
+    if (elapsed >= HOLD_TIME_MS){
+      stopHold();
+      performResetItems().catch(()=>{});
+      return;
+    }
+    holdRAF = requestAnimationFrame(tick);
+  }
+
+  function startHold(e){
+    e.preventDefault?.();
+    holding = true;
+    holdStart = Date.now();
+    elHoldProgress.style.width = "0%";
+    if (holdRAF) cancelAnimationFrame(holdRAF);
+    holdRAF = requestAnimationFrame(tick);
+  }
+
+  elResetItems.addEventListener("pointerdown", startHold);
+  elResetItems.addEventListener("pointerup", stopHold);
+  elResetItems.addEventListener("pointerleave", stopHold);
+  elResetItems.addEventListener("pointercancel", stopHold);
+  elResetItems.addEventListener("touchstart", startHold, {passive:false});
+  elResetItems.addEventListener("touchend", stopHold);
+  elResetItems.addEventListener("touchcancel", stopHold);
+
+  // Init
+  load();
+  render();
+})();
+</script>
+</body>
+</html>

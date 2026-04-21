@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Eventful</title>
+
+<!-- PWA -->
+<link rel="manifest" href="./manifest.json"/>
+<meta name="theme-color" content="#0d1117"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+
+<!-- iOS Safari PWA -->
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Eventful"/>
+<link rel="apple-touch-icon" href="./icons/icon-192.png"/>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<template id="__bundler_thumbnail" data-bg-color="#0d1117">
+  <svg viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+    <rect width="393" height="852" fill="#0d1117"/>
+    <rect x="20" y="80" width="200" height="28" rx="8" fill="#f0f6fc" opacity="0.9"/>
+    <rect x="20" y="116" width="120" height="14" rx="4" fill="#22c55e" opacity="0.6"/>
+    <rect x="0" y="160" width="393" height="1" fill="#ffffff" opacity="0.07"/>
+    <rect x="28" y="180" width="8" height="8" rx="4" fill="#22c55e"/>
+    <rect x="48" y="180" width="140" height="8" rx="4" fill="#f0f6fc" opacity="0.7"/>
+    <rect x="48" y="196" width="90" height="6" rx="3" fill="#22c55e" opacity="0.5"/>
+    <rect x="341" y="174" width="32" height="32" rx="16" fill="#22c55e" opacity="0.15"/>
+    <rect x="349" y="186" width="16" height="16" rx="8" fill="#22c55e"/>
+    <rect x="0" y="220" width="393" height="1" fill="#ffffff" opacity="0.07"/>
+    <rect x="28" y="240" width="8" height="8" rx="4" fill="#3a4149"/>
+    <rect x="48" y="240" width="120" height="8" rx="4" fill="#f0f6fc" opacity="0.7"/>
+    <rect x="48" y="256" width="60" height="6" rx="3" fill="#3a4149" opacity="0.7"/>
+    <rect x="341" y="234" width="32" height="32" rx="16" fill="#22c55e" opacity="0.13"/>
+    <rect x="349" y="246" width="16" height="16" rx="8" fill="#22c55e"/>
+    <rect x="0" y="280" width="393" height="1" fill="#ffffff" opacity="0.07"/>
+    <rect x="28" y="300" width="8" height="8" rx="4" fill="#22c55e"/>
+    <rect x="48" y="300" width="160" height="8" rx="4" fill="#f0f6fc" opacity="0.7"/>
+    <rect x="48" y="316" width="80" height="6" rx="3" fill="#22c55e" opacity="0.5"/>
+    <rect x="341" y="294" width="32" height="32" rx="16" fill="#22c55e" opacity="0.13"/>
+    <rect x="349" y="306" width="16" height="16" rx="8" fill="#22c55e"/>
+    <rect x="0" y="340" width="393" height="1" fill="#ffffff" opacity="0.07"/>
+    <rect x="28" y="360" width="8" height="8" rx="4" fill="#3a4149"/>
+    <rect x="48" y="360" width="100" height="8" rx="4" fill="#f0f6fc" opacity="0.7"/>
+    <rect x="48" y="376" width="50" height="6" rx="3" fill="#3a4149" opacity="0.7"/>
+    <rect x="341" y="354" width="32" height="32" rx="16" fill="#22c55e" opacity="0.13"/>
+    <rect x="349" y="366" width="16" height="16" rx="8" fill="#22c55e"/>
+    <!-- Tab bar -->
+    <rect x="0" y="770" width="393" height="82" fill="#0a0d12" opacity="0.94"/>
+    <rect x="0" y="770" width="393" height="1" fill="#ffffff" opacity="0.07"/>
+    <rect x="40" y="784" width="22" height="16" rx="3" fill="#22c55e" opacity="0.8"/>
+    <rect x="135" y="784" width="18" height="18" rx="9" fill="#3a4149" opacity="0.6"/>
+    <rect x="231" y="784" width="18" height="18" rx="9" fill="#3a4149" opacity="0.6"/>
+    <rect x="327" y="784" width="18" height="18" rx="9" fill="#3a4149" opacity="0.6"/>
+  </svg>
+</template>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body { background: #070a0e; display: flex; align-items: center; justify-content: center; font-family: -apple-system, system-ui, sans-serif; min-height: 100vh; }
+  ::-webkit-scrollbar { display: none; }
+  input, button, select { font-family: inherit; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ─── Palette ────────────────────────────────────────────────
+const C = {
+  bg:          '#0d1117',
+  surface:     '#161b22',
+  surface2:    '#21262d',
+  green:       '#22c55e',
+  greenDim:    'rgba(34,197,94,0.13)',
+  greenBright: '#4ade80',
+  greenBorder: 'rgba(34,197,94,0.28)',
+  text:        '#f0f6fc',
+  textMuted:   '#7d8590',
+  textDim:     '#3a4149',
+  red:         '#f85149',
+  redDim:      'rgba(248,81,73,0.12)',
+  redBorder:   'rgba(248,81,73,0.3)',
+  border:      'rgba(255,255,255,0.07)',
+  tabBar:      'rgba(10,13,18,0.94)',
+};
+
+// ─── Seed data ───────────────────────────────────────────────
+const mkTs = (minsAgo) => ({ iso: new Date(Date.now() - minsAgo * 60000).toISOString(), valid: true });
+const SENSORS_LIST = ['SNS-A1','SNS-B2','SNS-C3','SNS-D4','TEMP-01','VOLT-02','PRES-03'];
+const SEED = [
+  { id:'BRG-001', timestamps:[mkTs(5),mkTs(65),mkTs(320)], sensors:[{id:'SNS-A1',comment:'North span'}] },
+  { id:'BRG-002', timestamps:[mkTs(10)], sensors:[] },
+  { id:'BRG-003', timestamps:[], sensors:[] },
+  { id:'BRG-004', timestamps:[mkTs(3),mkTs(90),mkTs(200)], sensors:[{id:'SNS-B2',comment:''}] },
+  { id:'CAB-101', timestamps:[mkTs(20)], sensors:[] },
+  { id:'CAB-102', timestamps:[], sensors:[] },
+  { id:'CAB-103', timestamps:[mkTs(8)], sensors:[{id:'TEMP-01',comment:'Check calibration'}] },
+  { id:'JNT-A01', timestamps:[], sensors:[] },
+  { id:'JNT-A02', timestamps:[mkTs(45)], sensors:[] },
+  { id:'JNT-B01', timestamps:[], sensors:[] },
+  { id:'SPN-201', timestamps:[mkTs(2)], sensors:[] },
+  { id:'SPN-202', timestamps:[mkTs(15),mkTs(75)], sensors:[] },
+  { id:'SPN-203', timestamps:[], sensors:[] },
+  { id:'DK-0011', timestamps:[mkTs(120)], sensors:[{id:'VOLT-02',comment:''}] },
+  { id:'DK-0012', timestamps:[], sensors:[] },
+];
+
+// ─── Helpers ─────────────────────────────────────────────────
+const pad2 = n => String(n).padStart(2,'0');
+function fmtTime(iso) {
+  const d = new Date(iso);
+  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+}
+function fmtRelative(iso) {
+  const diff = (Date.now() - new Date(iso)) / 60000;
+  if (diff < 1)    return 'Just now';
+  if (diff < 60)   return `${Math.floor(diff)}m ago`;
+  if (diff < 1440) return `${Math.floor(diff/60)}h ago`;
+  return new Date(iso).toLocaleDateString([], { month:'short', day:'numeric' });
+}
+function fmtDateShort(iso) {
+  const d = new Date(iso), t = new Date();
+  if (d.toDateString() === t.toDateString()) return 'Today';
+  return d.toLocaleDateString([], { month:'short', day:'numeric' });
+}
+
+// ─── Icons (inline SVG) ──────────────────────────────────────
+const Ic = {
+  list:    (c='currentColor') => <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>,
+  search:  (c='currentColor') => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+  plus:    (c='currentColor') => <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  gear:    (c='currentColor') => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
+  back:    (c='currentColor') => <svg width="11" height="18" viewBox="0 0 11 18" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 1L1 9l8 8"/></svg>,
+  chevD:   (c='currentColor') => <svg width="12" height="8"  viewBox="0 0 12 8"  fill="none" stroke={c} strokeWidth="2"   strokeLinecap="round"><path d="M1 1l5 5 5-5"/></svg>,
+  chevR:   (c='currentColor') => <svg width="8"  height="12" viewBox="0 0 8 12"  fill="none" stroke={c} strokeWidth="2"   strokeLinecap="round"><path d="M1 1l5 5-5 5"/></svg>,
+  trash:   (c='currentColor') => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2"   strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>,
+  upload:  (c='currentColor') => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2"   strokeLinecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
+  check:   (c='currentColor') => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="3"   strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>,
+  clock:   (c='currentColor') => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2"   strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+};
+
+// ─── Reusable: Press-flash hook ──────────────────────────────
+function useFlash(ms=550) {
+  const [on, setOn] = useState(false);
+  const fire = useCallback(() => { setOn(true); setTimeout(()=>setOn(false), ms); }, [ms]);
+  return [on, fire];
+}
+
+// ─── Record Dot Button ───────────────────────────────────────
+function RecordDot({ onPress, size=42 }) {
+  const [pressed, setPressed] = useState(false);
+  return (
+    <button
+      onPointerDown={e=>{e.stopPropagation();setPressed(true);}}
+      onPointerUp={e=>{e.stopPropagation();setPressed(false);onPress();}}
+      onPointerLeave={()=>setPressed(false)}
+      onClick={e=>e.stopPropagation()}
+      style={{
+        width:size, height:size, borderRadius:'50%',
+        border:`2px solid ${C.green}`,
+        background: pressed ? C.green : C.greenDim,
+        display:'flex', alignItems:'center', justifyContent:'center',
+        cursor:'pointer', flexShrink:0,
+        transform: pressed ? 'scale(0.88)' : 'scale(1)',
+        transition:'transform 0.1s, background 0.1s',
+        WebkitTapHighlightColor:'transparent',
+      }}
+    >
+      <div style={{
+        width:size*0.36, height:size*0.36, borderRadius:'50%',
+        background: pressed ? '#fff' : C.green,
+        transition:'background 0.1s',
+      }}/>
+    </button>
+  );
+}
+
+// ─── Item Row — standard ─────────────────────────────────────
+function ItemRow({ item, onRecord, onSelect, style:rowStyle={} }) {
+  const [flash, fireFlash] = useFlash();
+  const valid = item.timestamps.filter(t=>t.valid);
+  const last  = valid[0];
+  return (
+    <div
+      style={{
+        display:'flex', alignItems:'center', gap:12,
+        padding:'11px 16px',
+        background: flash ? 'rgba(34,197,94,0.07)' : 'transparent',
+        borderBottom:`1px solid ${C.border}`,
+        transition:'background 0.35s',
+        ...rowStyle,
+      }}
+    >
+      {/* Dot indicator */}
+      <div style={{
+        width:8, height:8, borderRadius:'50%', flexShrink:0,
+        background: valid.length > 0 ? C.green : C.textDim,
+        marginLeft:2,
+      }}/>
+      <div onClick={()=>onSelect(item)} style={{ flex:1, minWidth:0, cursor:'pointer' }}>
+        <div style={{ fontSize:15, fontWeight:600, color:C.text, letterSpacing:-0.2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+          {item.id}
+        </div>
+        <div style={{ fontSize:12, color: last ? C.textMuted : C.textDim, marginTop:2, display:'flex', alignItems:'center', gap:5 }}>
+          {last
+            ? <><span style={{color:C.green, fontVariantNumeric:'tabular-nums'}}>{fmtTime(last.iso)}</span><span style={{color:C.textDim}}>·</span>{fmtRelative(last.iso)}</>
+            : 'No records'}
+          {valid.length > 1 &&
+            <span style={{
+              background:C.greenDim, color:C.green, borderRadius:6,
+              padding:'0 5px', fontSize:11, fontWeight:600, letterSpacing:0.1,
+              lineHeight:'16px',
+            }}>{valid.length}</span>
+          }
+        </div>
+      </div>
+      <RecordDot onPress={()=>{ fireFlash(); onRecord(item.id); }} size={40}/>
+    </div>
+  );
+}
+
+// ─── Item Row — card variant ─────────────────────────────────
+function ItemCard({ item, onRecord, onSelect }) {
+  const [flash, fireFlash] = useFlash();
+  const valid = item.timestamps.filter(t=>t.valid);
+  const last  = valid[0];
+  return (
+    <div
+      style={{
+        background: flash ? 'rgba(34,197,94,0.09)' : C.surface,
+        border:`1px solid ${flash ? C.greenBorder : C.border}`,
+        borderRadius:18, padding:'14px 16px',
+        display:'flex', alignItems:'center', gap:14,
+        transition:'background 0.35s, border-color 0.35s',
+      }}
+    >
+      <div onClick={()=>onSelect(item)} style={{ flex:1, minWidth:0, cursor:'pointer' }}>
+        <div style={{ fontSize:16, fontWeight:700, color:C.text, letterSpacing:-0.3 }}>{item.id}</div>
+        <div style={{ fontSize:12, color: last ? C.green : C.textDim, marginTop:4, display:'flex', alignItems:'center', gap:5 }}>
+          {last
+            ? <>{Ic.clock(C.textDim)}{fmtRelative(last.iso)}{valid.length > 1 && <span style={{color:C.textDim}}>+{valid.length-1}</span>}</>
+            : 'No records yet'}
+        </div>
+        {item.sensors.length > 0 &&
+          <div style={{ marginTop:6, display:'flex', gap:4, flexWrap:'wrap' }}>
+            {item.sensors.map(s=>(
+              <span key={s.id} style={{ fontSize:11, background:'rgba(34,197,94,0.08)', color:C.green, padding:'2px 7px', borderRadius:6, border:`1px solid ${C.greenBorder}`, fontWeight:500 }}>{s.id}</span>
+            ))}
+          </div>
+        }
+      </div>
+      <RecordDot onPress={()=>{ fireFlash(); onRecord(item.id); }} size={46}/>
+    </div>
+  );
+}
+
+// ─── Item Row — minimal ──────────────────────────────────────
+function ItemMinimal({ item, onRecord, onSelect }) {
+  const [flash, fireFlash] = useFlash();
+  const valid = item.timestamps.filter(t=>t.valid);
+  const last  = valid[0];
+  return (
+    <div
+      style={{
+        display:'flex', alignItems:'center',
+        padding:'8px 16px',
+        background: flash ? 'rgba(34,197,94,0.06)' : 'transparent',
+        borderBottom:`1px solid ${C.border}`,
+        transition:'background 0.3s',
+        minHeight:48,
+      }}
+    >
+      <div onClick={()=>onSelect(item)} style={{ flex:1, display:'flex', alignItems:'center', gap:12, minWidth:0, cursor:'pointer' }}>
+        <span style={{ fontSize:14, fontWeight:600, color:C.text, letterSpacing:-0.2, flex:'0 0 auto', maxWidth:'55%', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.id}</span>
+        <span style={{ fontSize:12, color: last ? C.textMuted : C.textDim, fontVariantNumeric:'tabular-nums', flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+          {last ? fmtTime(last.iso) : '—'}
+          {valid.length > 1 && <span style={{color:C.textDim, marginLeft:5}}>{valid.length}×</span>}
+        </span>
+      </div>
+      <RecordDot onPress={()=>{ fireFlash(); onRecord(item.id); }} size={34}/>
+    </div>
+  );
+}
+
+// ─── Detail Screen ───────────────────────────────────────────
+function DetailScreen({ item, onBack, onRecord, onUpdateItem }) {
+  const [tsExpanded,   setTsExpanded]   = useState(true);
+  const [sensExpanded, setSensExpanded] = useState(false);
+  const [flash, fireFlash] = useFlash(400);
+  const [selSensor, setSelSensor] = useState('');
+
+  const recordNow = () => { fireFlash(); onRecord(item.id); };
+
+  const toggleValid = idx => {
+    const ts = [...item.timestamps];
+    ts[idx] = { ...ts[idx], valid: !ts[idx].valid };
+    onUpdateItem({ ...item, timestamps: ts });
+  };
+
+  const addSensor = () => {
+    if (!selSensor || item.sensors.find(s=>s.id===selSensor)) return;
+    onUpdateItem({ ...item, sensors:[...item.sensors,{id:selSensor,comment:''}] });
+    setSelSensor('');
+  };
+
+  const removeSensor = sid => onUpdateItem({ ...item, sensors: item.sensors.filter(s=>s.id!==sid) });
+
+  const updateComment = (sid,v) => onUpdateItem({ ...item, sensors: item.sensors.map(s=>s.id===sid?{...s,comment:v}:s) });
+
+  const valid   = item.timestamps.filter(t=>t.valid);
+  const invalid = item.timestamps.filter(t=>!t.valid);
+
+  return (
+    <div style={{ height:'100%', overflowY:'auto', background:C.bg }}>
+      {/* Status bar spacer */}
+      <div style={{ height:60 }}/>
+
+      {/* Nav */}
+      <div style={{ padding:'4px 20px 12px', display:'flex', alignItems:'center', gap:8 }}>
+        <button onClick={onBack} style={{ background:'none', border:'none', cursor:'pointer', color:C.green, display:'flex', alignItems:'center', gap:6, fontSize:16, fontWeight:500, padding:'4px 0' }}>
+          {Ic.back(C.green)} <span>Items</span>
+        </button>
+      </div>
+
+      {/* Title */}
+      <div style={{ padding:'0 20px 24px' }}>
+        <div style={{ fontSize:30, fontWeight:800, color:C.text, letterSpacing:-0.7 }}>{item.id}</div>
+        <div style={{ fontSize:13, color:C.textMuted, marginTop:5, display:'flex', gap:12 }}>
+          <span>{valid.length} valid timestamp{valid.length!==1?'s':''}</span>
+          {invalid.length>0 && <span style={{color:C.red}}>{invalid.length} invalid</span>}
+          {item.sensors.length>0 && <span>{item.sensors.length} sensor{item.sensors.length!==1?'s':''}</span>}
+        </div>
+      </div>
+
+      {/* Record button */}
+      <div style={{ padding:'0 20px 28px' }}>
+        <button
+          onClick={recordNow}
+          style={{
+            width:'100%', height:62, borderRadius:22,
+            background: flash ? C.greenBright : C.green,
+            border:'none', cursor:'pointer',
+            display:'flex', alignItems:'center', justifyContent:'center', gap:10,
+            fontSize:17, fontWeight:700, color:'#0a120d',
+            transform: flash ? 'scale(0.96)' : 'scale(1)',
+            transition:'all 0.12s',
+            letterSpacing:-0.3,
+          }}
+        >
+          <div style={{ width:10, height:10, borderRadius:'50%', background:'rgba(0,0,0,0.5)' }}/>
+          Record Timestamp
+        </button>
+        {flash &&
+          <div style={{ textAlign:'center', fontSize:12, color:C.green, marginTop:8, fontVariantNumeric:'tabular-nums', fontWeight:500 }}>
+            {fmtTime(new Date().toISOString())} recorded
+          </div>
+        }
+      </div>
+
+      {/* Timestamps section */}
+      <div style={{ padding:'0 16px 20px' }}>
+        <button
+          onClick={()=>setTsExpanded(e=>!e)}
+          style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', background:'none', border:'none', cursor:'pointer', padding:'0 4px 10px', gap:8 }}
+        >
+          <span style={{ fontSize:12, fontWeight:700, color:C.textMuted, textTransform:'uppercase', letterSpacing:0.8 }}>Timestamps</span>
+          <span style={{ color:C.textDim, display:'inline-flex', transform: tsExpanded?'rotate(0)':'rotate(-90deg)', transition:'transform 0.2s' }}>{Ic.chevD()}</span>
+        </button>
+        {tsExpanded && (
+          <div style={{ background:C.surface, borderRadius:18, overflow:'hidden', border:`1px solid ${C.border}` }}>
+            {item.timestamps.length === 0 &&
+              <div style={{ padding:'24px 16px', textAlign:'center', color:C.textDim, fontSize:14 }}>
+                No timestamps recorded yet
+              </div>
+            }
+            {item.timestamps.map((ts,ri)=>(
+                <div
+                  key={ri}
+                  style={{
+                    display:'flex', alignItems:'center', gap:12,
+                    padding:'12px 16px',
+                    borderBottom: ri < item.timestamps.length-1 ? `1px solid ${C.border}` : 'none',
+                    opacity: ts.valid ? 1 : 0.45,
+                  }}
+                >
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:15, fontWeight:600, color:C.text, fontVariantNumeric:'tabular-nums', textDecoration: ts.valid?'none':'line-through' }}>
+                      {fmtTime(ts.iso)}
+                    </div>
+                    <div style={{ fontSize:12, color:C.textMuted, marginTop:2 }}>
+                      {fmtDateShort(ts.iso)} · {fmtRelative(ts.iso)}
+                    </div>
+                  </div>
+                  <button
+                    onClick={()=>toggleValid(ri)}
+                    style={{
+                      height:28, paddingInline:10, borderRadius:8, border:'none', cursor:'pointer',
+                      background: ts.valid ? C.greenDim : C.redDim,
+                      color:      ts.valid ? C.green   : C.red,
+                      fontSize:11, fontWeight:700, letterSpacing:0.2,
+                    }}
+                  >
+                    {ts.valid ? '✓ Valid' : '✗ Invalid'}
+                  </button>
+                </div>
+              ))}
+          </div>
+        )}
+      </div>
+
+      {/* Sensors section */}
+      <div style={{ padding:'0 16px 100px' }}>
+        <button
+          onClick={()=>setSensExpanded(e=>!e)}
+          style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', background:'none', border:'none', cursor:'pointer', padding:'0 4px 10px', gap:8 }}
+        >
+          <span style={{ fontSize:12, fontWeight:700, color:C.textMuted, textTransform:'uppercase', letterSpacing:0.8 }}>
+            Sensors {item.sensors.length>0 && `(${item.sensors.length})`}
+          </span>
+          <span style={{ color:C.textDim, display:'inline-flex', transform: sensExpanded?'rotate(0)':'rotate(-90deg)', transition:'transform 0.2s' }}>{Ic.chevD()}</span>
+        </button>
+        {sensExpanded && (
+          <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+            {item.sensors.map(s=>(
+              <div key={s.id} style={{ background:C.surface, borderRadius:16, padding:'12px 14px', border:`1px solid ${C.border}` }}>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
+                  <span style={{ fontSize:14, fontWeight:700, color:C.green, letterSpacing:-0.1 }}>{s.id}</span>
+                  <button onClick={()=>removeSensor(s.id)} style={{ background:'none', border:'none', color:C.red, cursor:'pointer', fontSize:12, fontWeight:600, padding:'2px 6px', borderRadius:6 }}>Remove</button>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Add comment..."
+                  defaultValue={s.comment}
+                  onChange={e=>updateComment(s.id, e.target.value)}
+                  style={{ width:'100%', background:C.surface2, border:`1px solid ${C.border}`, borderRadius:10, padding:'9px 12px', color:C.text, fontSize:14, outline:'none' }}
+                />
+              </div>
+            ))}
+            <div style={{ display:'flex', gap:8 }}>
+              <select
+                value={selSensor}
+                onChange={e=>setSelSensor(e.target.value)}
+                style={{ flex:1, background:C.surface, border:`1px solid ${C.border}`, borderRadius:12, padding:'10px 12px', color: selSensor?C.text:C.textMuted, fontSize:14, outline:'none' }}
+              >
+                <option value="">Select sensor…</option>
+                {SENSORS_LIST.filter(s=>!item.sensors.find(ss=>ss.id===s)).map(s=><option key={s} value={s}>{s}</option>)}
+              </select>
+              <button
+                onClick={addSensor}
+                disabled={!selSensor}
+                style={{ height:44, paddingInline:18, borderRadius:12, border:'none', cursor: selSensor?'pointer':'default', background: selSensor?C.green:C.surface2, color: selSensor?'#0a120d':C.textDim, fontWeight:700, fontSize:14, transition:'all 0.15s' }}
+              >
+                Add
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Add Screen ───────────────────────────────────────────────
+function AddScreen({ items, onAdd }) {
+  const [val,  setVal]   = useState('');
+  const [done, setDone]  = useState('');
+  const [err,  setErr]   = useState('');
+
+  const submit = () => {
+    const id = val.trim();
+    if (!id) return;
+    if (items.find(i=>i.id===id)) { setErr(`"${id}" already exists`); return; }
+    onAdd(id);
+    setDone(id); setVal(''); setErr('');
+    setTimeout(()=>setDone(''),2200);
+  };
+
+  return (
+    <div style={{ height:'100%', overflowY:'auto' }}>
+      <div style={{ height:60 }}/>
+      <div style={{ padding:'12px 20px 28px' }}>
+        <div style={{ fontSize:30, fontWeight:800, color:C.text, letterSpacing:-0.7 }}>Add Item</div>
+        <div style={{ fontSize:14, color:C.textMuted, marginTop:6 }}>Enter an ID or import from a text file</div>
+      </div>
+
+      {done &&
+        <div style={{ margin:'0 16px 16px', background:C.greenDim, border:`1px solid ${C.greenBorder}`, borderRadius:16, padding:'12px 16px', display:'flex', alignItems:'center', gap:10, color:C.green, fontSize:14, fontWeight:600 }}>
+          {Ic.check(C.green)} "{done}" added successfully
+        </div>
+      }
+
+      <div style={{ padding:'0 16px', display:'flex', flexDirection:'column', gap:10, marginBottom:28 }}>
+        <label style={{ fontSize:11, fontWeight:700, color:C.textMuted, textTransform:'uppercase', letterSpacing:0.8, paddingLeft:4 }}>Item ID</label>
+        <input
+          type="text"
+          placeholder="e.g. BRG-005"
+          value={val}
+          onChange={e=>{setVal(e.target.value);setErr('');}}
+          onKeyDown={e=>e.key==='Enter'&&submit()}
+          style={{ background:C.surface, border:`1px solid ${err?C.redBorder:C.border}`, borderRadius:16, padding:'15px 16px', color:C.text, fontSize:16, outline:'none', width:'100%', transition:'border-color 0.15s' }}
+        />
+        {err && <div style={{ fontSize:12, color:C.red, paddingLeft:4 }}>{err}</div>}
+        <button
+          onClick={submit}
+          disabled={!val.trim()}
+          style={{ height:54, borderRadius:18, border:'none', cursor: val.trim()?'pointer':'default', background: val.trim()?C.green:C.surface2, color: val.trim()?'#0a120d':C.textDim, fontWeight:700, fontSize:16, transition:'all 0.15s', letterSpacing:-0.2 }}
+        >
+          Add Item
+        </button>
+      </div>
+
+      <div style={{ height:1, background:C.border, margin:'0 16px 28px' }}/>
+
+      <div style={{ padding:'0 16px', display:'flex', flexDirection:'column', gap:10 }}>
+        <label style={{ fontSize:11, fontWeight:700, color:C.textMuted, textTransform:'uppercase', letterSpacing:0.8, paddingLeft:4 }}>Import from .txt file</label>
+        <div style={{
+          background:C.surface, border:`1px dashed rgba(255,255,255,0.12)`,
+          borderRadius:18, padding:'28px 20px', textAlign:'center',
+          color:C.textMuted, fontSize:14, lineHeight:1.6,
+          display:'flex', flexDirection:'column', alignItems:'center', gap:10,
+        }}>
+          <span style={{ color:C.green, display:'inline-flex' }}>{Ic.upload(C.green)}</span>
+          <div>
+            Tap to select a <strong style={{color:C.text}}>.txt</strong> file<br/>
+            <span style={{ fontSize:12, color:C.textDim }}>One ID per line — duplicates are skipped</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Settings Screen ──────────────────────────────────────────
+function SettingsScreen({ items, onExport, onResetTimestamps, onResetAll }) {
+  const totalTs  = items.reduce((a,i)=>a+i.timestamps.length, 0);
+  const [confirm, setConfirm] = useState(null); // 'ts' | 'all'
+
+  const StatBox = ({ label, value, accent }) => (
+    <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:18, padding:'16px 16px' }}>
+      <div style={{ fontSize:26, fontWeight:800, color: accent||C.green, letterSpacing:-0.5, fontVariantNumeric:'tabular-nums' }}>{value}</div>
+      <div style={{ fontSize:13, color:C.textMuted, marginTop:4 }}>{label}</div>
+    </div>
+  );
+
+  const Row = ({ label, sub, color, icon, onPress, last, danger }) => (
+    <button
+      onClick={onPress}
+      style={{
+        width:'100%', display:'flex', alignItems:'center', gap:14,
+        padding:'14px 16px', background: danger==='active'?C.redDim:'none',
+        border:'none', cursor:'pointer', textAlign:'left',
+        borderBottom: last?'none':`1px solid ${C.border}`,
+        transition:'background 0.2s',
+      }}
+    >
+      {icon && <span style={{ color: color||C.green, display:'inline-flex' }}>{icon}</span>}
+      <div style={{ flex:1 }}>
+        <div style={{ fontSize:16, color: color||C.text }}>{label}</div>
+        {sub && <div style={{ fontSize:12, color:C.textMuted, marginTop:2 }}>{sub}</div>}
+      </div>
+      <span style={{ color:C.textDim, display:'inline-flex' }}>{Ic.chevR()}</span>
+    </button>
+  );
+
+  return (
+    <div style={{ height:'100%', overflowY:'auto', paddingBottom:90 }}>
+      <div style={{ height:60 }}/>
+      <div style={{ padding:'12px 20px 20px' }}>
+        <div style={{ fontSize:30, fontWeight:800, color:C.text, letterSpacing:-0.7 }}>Settings</div>
+      </div>
+
+      {/* Stats grid */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, padding:'0 16px 24px' }}>
+        <StatBox label="Total items"      value={items.length}/>
+        <StatBox label="Timestamps"       value={totalTs}/>
+        <StatBox label="Items recorded"   value={items.filter(i=>i.timestamps.length>0).length}/>
+        <StatBox label="Sensors assigned" value={items.reduce((a,i)=>a+i.sensors.length,0)}/>
+      </div>
+
+      {/* Export */}
+      <div style={{ padding:'0 16px 12px' }}>
+        <div style={{ fontSize:11, fontWeight:700, color:C.textMuted, textTransform:'uppercase', letterSpacing:0.8, padding:'0 4px 8px' }}>Export & Backup</div>
+        <div style={{ background:C.surface, borderRadius:18, overflow:'hidden', border:`1px solid ${C.border}` }}>
+          <Row label="Export as JSON"    sub={`${items.length} items · ${totalTs} timestamps`} icon={Ic.upload()} onPress={onExport}/>
+          <Row label="Download Backup"   sub="Auto-backup of current session" icon={Ic.upload()} last onPress={()=>{}}/>
+        </div>
+      </div>
+
+      {/* Reset */}
+      <div style={{ padding:'12px 16px' }}>
+        <div style={{ fontSize:11, fontWeight:700, color:C.textMuted, textTransform:'uppercase', letterSpacing:0.8, padding:'0 4px 8px' }}>Danger Zone</div>
+        <div style={{ background:C.surface, borderRadius:18, overflow:'hidden', border:`1px solid ${C.border}` }}>
+          <Row
+            label={confirm==='ts' ? 'Tap again to confirm' : 'Reset All Timestamps'}
+            sub="IDs and sensors are kept"
+            color={C.red} icon={Ic.trash(C.red)}
+            danger={confirm==='ts'?'active':null}
+            onPress={()=>{ if(confirm==='ts'){onResetTimestamps();setConfirm(null);}else setConfirm('ts'); }}
+          />
+          <Row
+            label={confirm==='all' ? 'Hold to confirm reset' : 'Reset Everything'}
+            sub="Clears all items, timestamps & sensors"
+            color={C.red} icon={Ic.trash(C.red)}
+            danger={confirm==='all'?'active':null}
+            last
+            onPress={()=>{ if(confirm==='all'){onResetAll();setConfirm(null);}else setConfirm('all'); }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Search Screen ────────────────────────────────────────────
+function SearchScreen({ items, onRecord, onSelect, variant }) {
+  const [q, setQ] = useState('');
+  const filtered = q ? items.filter(i=>i.id.toLowerCase().includes(q.toLowerCase())) : [];
+  const RowComp = variant==='card' ? ItemCard : variant==='minimal' ? ItemMinimal : ItemRow;
+
+  return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', paddingBottom:82 }}>
+      <div style={{ height:60 }}/>
+      <div style={{ padding:'12px 16px 8px' }}>
+        <div style={{
+          background:C.surface, border:`1px solid ${C.border}`, borderRadius:16,
+          display:'flex', alignItems:'center', gap:10, padding:'0 14px',
+        }}>
+          <span style={{ color:C.textMuted, display:'inline-flex', flexShrink:0 }}>{Ic.search(C.textMuted)}</span>
+          <input
+            autoFocus
+            type="text"
+            placeholder="Search items…"
+            value={q}
+            onChange={e=>setQ(e.target.value)}
+            style={{ flex:1, background:'none', border:'none', outline:'none', color:C.text, fontSize:16, height:48 }}
+          />
+          {q && <button onClick={()=>setQ('')} style={{ background:'none', border:'none', color:C.textMuted, cursor:'pointer', fontSize:20, lineHeight:1, padding:'0 2px' }}>×</button>}
+        </div>
+      </div>
+      <div style={{ flex:1, overflowY:'auto' }}>
+        {!q && <div style={{ padding:'48px 20px', textAlign:'center', color:C.textDim, fontSize:14 }}>Type to search {items.length} items</div>}
+        {q && filtered.length===0 && <div style={{ padding:'48px 20px', textAlign:'center', color:C.textDim, fontSize:14 }}>No results for "{q}"</div>}
+        {variant==='card'
+          ? <div style={{ display:'flex', flexDirection:'column', gap:10, padding:'8px 12px' }}>
+              {filtered.map(item=><RowComp key={item.id} item={item} onRecord={onRecord} onSelect={onSelect}/>)}
+            </div>
+          : filtered.map(item=><RowComp key={item.id} item={item} onRecord={onRecord} onSelect={onSelect}/>)
+        }
+      </div>
+    </div>
+  );
+}
+
+// ─── Tab Bar ──────────────────────────────────────────────────
+function TabBar({ tab, setTab }) {
+  const tabs = [
+    { id:'items',    label:'Items',    icon: Ic.list    },
+    { id:'search',   label:'Search',   icon: Ic.search  },
+    { id:'add',      label:'Add',      icon: Ic.plus    },
+    { id:'settings', label:'Settings', icon: Ic.gear    },
+  ];
+  return (
+    <div style={{
+      position:'absolute', bottom:0, left:0, right:0,
+      height:82, display:'flex', alignItems:'flex-start', paddingTop:8,
+      background:C.tabBar, backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)',
+      borderTop:`1px solid ${C.border}`, zIndex:100,
+    }}>
+      {tabs.map(t=>{
+        const active = tab===t.id;
+        return (
+          <button
+            key={t.id}
+            onClick={()=>setTab(t.id)}
+            style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:3, background:'none', border:'none', cursor:'pointer', padding:'4px 0', color: active?C.green:C.textDim, transition:'color 0.15s' }}
+          >
+            {t.icon(active?C.green:C.textDim)}
+            <span style={{ fontSize:10, fontWeight: active?700:500, letterSpacing:0.2 }}>{t.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Items Tab ────────────────────────────────────────────────
+function ItemsTab({ items, onRecord, onSelect, variant }) {
+  const valid = items.reduce((a,i)=>a+i.timestamps.filter(t=>t.valid).length, 0);
+  const RowComp = variant==='card' ? ItemCard : variant==='minimal' ? ItemMinimal : ItemRow;
+
+  return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column' }}>
+      <div style={{ height:60 }}/>
+      <div style={{ padding:'12px 20px 14px' }}>
+        <div style={{ fontSize:32, fontWeight:800, color:C.text, letterSpacing:-0.8, lineHeight:1.1 }}>Eventful</div>
+        <div style={{ fontSize:13, color:C.textMuted, marginTop:5 }}>
+          {items.length} items · <span style={{ color:C.green }}>{valid} recorded</span>
+        </div>
+      </div>
+      <div style={{ flex:1, overflowY:'auto', paddingBottom:82 }}>
+        {variant==='card'
+          ? <div style={{ display:'flex', flexDirection:'column', gap:10, padding:'0 12px' }}>
+              {items.map(item=><RowComp key={item.id} item={item} onRecord={onRecord} onSelect={onSelect}/>)}
+            </div>
+          : items.map(item=><RowComp key={item.id} item={item} onRecord={onRecord} onSelect={onSelect}/>)
+        }
+      </div>
+    </div>
+  );
+}
+
+// ─── App root ─────────────────────────────────────────────────
+function EventfulApp({ variant }) {
+  const [items, setItems] = useState(()=>{
+    try { const s=localStorage.getItem('ef_items'); return s?JSON.parse(s):SEED; } catch { return SEED; }
+  });
+  const [tab,    setTab]    = useState('items');
+  const [detail, setDetail] = useState(null);
+
+  useEffect(()=>{ localStorage.setItem('ef_items',JSON.stringify(items)); },[items]);
+
+  const recordTimestamp = id => {
+    const ts = { iso: new Date().toISOString(), valid:true };
+    setItems(prev => prev.map(i => i.id===id ? { ...i, timestamps:[ts,...i.timestamps] } : i));
+    if (detail?.id===id) setDetail(d=>({ ...d, timestamps:[ts,...d.timestamps] }));
+  };
+
+  const updateItem = updated => {
+    setItems(prev=>prev.map(i=>i.id===updated.id?updated:i));
+    setDetail(updated);
+  };
+
+  const addItem = id => {
+    if (items.find(i=>i.id===id)) return;
+    setItems(prev=>[...prev, { id, timestamps:[], sensors:[] }]);
+  };
+
+  const exportJSON = () => {
+    const blob = new Blob([JSON.stringify(items,null,2)],{type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `eventful-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+  };
+
+  const handleSelect = item => {
+    // sync with latest state
+    const latest = items.find(i=>i.id===item.id)||item;
+    setDetail(latest);
+  };
+
+  return (
+    <div style={{ height:'100%', position:'relative', background:C.bg, overflow:'hidden' }}>
+      {/* Detail overlay — slides in */}
+      {detail && (
+        <div style={{ position:'absolute', inset:0, zIndex:50, background:C.bg }}>
+          <DetailScreen
+            item={items.find(i=>i.id===detail.id)||detail}
+            onBack={()=>setDetail(null)}
+            onRecord={recordTimestamp}
+            onUpdateItem={updateItem}
+          />
+        </div>
+      )}
+
+      {tab==='items'    && <ItemsTab    items={items} onRecord={recordTimestamp} onSelect={handleSelect} variant={variant}/>}
+      {tab==='search'   && <SearchScreen items={items} onRecord={recordTimestamp} onSelect={handleSelect} variant={variant}/>}
+      {tab==='add'      && <AddScreen    items={items} onAdd={addItem}/>}
+      {tab==='settings' && <SettingsScreen items={items} onExport={exportJSON} onResetTimestamps={()=>setItems(prev=>prev.map(i=>({...i,timestamps:[]})))} onResetAll={()=>setItems(SEED)}/>}
+
+      <TabBar tab={tab} setTab={setTab}/>
+    </div>
+  );
+}
+
+// ─── Tweaks + Root ────────────────────────────────────────────
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "variant": "default"
+}/*EDITMODE-END*/;
+
+function Root() {
+  const [tweaks,     setTweaks]     = useState(TWEAK_DEFAULTS);
+  const [showTweaks, setShowTweaks] = useState(false);
+
+  useEffect(()=>{
+    const handler = e => {
+      if (e.data?.type==='__activate_edit_mode')   setShowTweaks(true);
+      if (e.data?.type==='__deactivate_edit_mode') setShowTweaks(false);
+    };
+    window.addEventListener('message', handler);
+    window.parent.postMessage({ type:'__edit_mode_available' }, '*');
+    return ()=>window.removeEventListener('message', handler);
+  },[]);
+
+  const setTweak = (k,v) => {
+    setTweaks(p=>{ const n={...p,[k]:v}; window.parent.postMessage({type:'__edit_mode_set_keys',edits:{[k]:v}},'*'); return n; });
+  };
+
+  const opts = [
+    { value:'default', label:'Standard rows',      desc:'Compact list, green dot indicator' },
+    { value:'card',    label:'Card layout',         desc:'Elevated cards, sensor chips visible' },
+    { value:'minimal', label:'Ultra-dense / minimal', desc:'Maximum items visible, tabular time' },
+  ];
+
+  return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', padding:24, gap:32, flexWrap:'wrap', background:'#070a0e' }}>
+      <IOSDevice dark width={393} height={852}>
+        <EventfulApp variant={tweaks.variant}/>
+      </IOSDevice>
+
+      {showTweaks && (
+        <div style={{
+          position:'fixed', bottom:24, right:24,
+          background:'#141920', border:'1px solid rgba(255,255,255,0.09)',
+          borderRadius:22, padding:20, width:230, zIndex:9999,
+          boxShadow:'0 12px 40px rgba(0,0,0,0.6)',
+        }}>
+          <div style={{ fontSize:11, fontWeight:800, color:'#7d8590', textTransform:'uppercase', letterSpacing:1, marginBottom:14 }}>Tweaks</div>
+          <div style={{ fontSize:11, color:'#7d8590', fontWeight:700, textTransform:'uppercase', letterSpacing:0.6, marginBottom:8 }}>List Style</div>
+          {opts.map(o=>(
+            <button
+              key={o.value}
+              onClick={()=>setTweak('variant',o.value)}
+              style={{
+                display:'block', width:'100%', textAlign:'left',
+                padding:'9px 12px', borderRadius:12, border:'none', marginBottom:5,
+                background: tweaks.variant===o.value ? 'rgba(34,197,94,0.13)' : 'transparent',
+                cursor:'pointer',
+              }}
+            >
+              <div style={{ fontSize:14, fontWeight: tweaks.variant===o.value?700:500, color: tweaks.variant===o.value?C.green:'#7d8590', marginBottom:2 }}>{o.label}</div>
+              <div style={{ fontSize:11, color:'#484f58' }}>{o.desc}</div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<Root/>);
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
