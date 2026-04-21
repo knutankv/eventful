@@ -70,6 +70,19 @@
 <script type="text/babel">
 const { useState, useEffect, useRef, useCallback } = React;
 
+// ─── Group colors ─────────────────────────────────────────────
+const GROUP_COLORS = [
+  '#f97316','#22c55e','#38bdf8','#a78bfa',
+  '#f43f5e','#facc15','#2dd4bf','#fb7185',
+  '#60a5fa','#34d399','#e879f9','#fbbf24',
+];
+function groupColor(group) {
+  if (!group) return null;
+  let hash = 0;
+  for (let i = 0; i < group.length; i++) hash = group.charCodeAt(i) + ((hash << 5) - hash);
+  return GROUP_COLORS[Math.abs(hash) % GROUP_COLORS.length];
+}
+
 // ─── Palette ────────────────────────────────────────────────
 const C = {
   bg:          '#0d1117',
@@ -93,21 +106,21 @@ const C = {
 const mkTs = (minsAgo) => ({ iso: new Date(Date.now() - minsAgo * 60000).toISOString(), valid: true });
 const SENSORS_LIST = ['SNS-A1','SNS-B2','SNS-C3','SNS-D4','TEMP-01','VOLT-02','PRES-03'];
 const SEED = [
-  { id:'BRG-001', timestamps:[mkTs(5),mkTs(65),mkTs(320)], sensors:[{id:'SNS-A1',comment:'North span'}] },
-  { id:'BRG-002', timestamps:[mkTs(10)], sensors:[] },
-  { id:'BRG-003', timestamps:[], sensors:[] },
-  { id:'BRG-004', timestamps:[mkTs(3),mkTs(90),mkTs(200)], sensors:[{id:'SNS-B2',comment:''}] },
-  { id:'CAB-101', timestamps:[mkTs(20)], sensors:[] },
-  { id:'CAB-102', timestamps:[], sensors:[] },
-  { id:'CAB-103', timestamps:[mkTs(8)], sensors:[{id:'TEMP-01',comment:'Check calibration'}] },
-  { id:'JNT-A01', timestamps:[], sensors:[] },
-  { id:'JNT-A02', timestamps:[mkTs(45)], sensors:[] },
-  { id:'JNT-B01', timestamps:[], sensors:[] },
-  { id:'SPN-201', timestamps:[mkTs(2)], sensors:[] },
-  { id:'SPN-202', timestamps:[mkTs(15),mkTs(75)], sensors:[] },
-  { id:'SPN-203', timestamps:[], sensors:[] },
-  { id:'DK-0011', timestamps:[mkTs(120)], sensors:[{id:'VOLT-02',comment:''}] },
-  { id:'DK-0012', timestamps:[], sensors:[] },
+  { id:'BRG-001', group:'GR1', timestamps:[mkTs(5),mkTs(65),mkTs(320)], sensors:[{id:'SNS-A1',comment:'North span'}] },
+  { id:'BRG-002', group:'GR2', timestamps:[mkTs(10)], sensors:[] },
+  { id:'BRG-003', group:'GR2', timestamps:[], sensors:[] },
+  { id:'BRG-004', group:'GR2', timestamps:[mkTs(3),mkTs(90),mkTs(200)], sensors:[{id:'SNS-B2',comment:''}] },
+  { id:'CAB-101', group:'GR3', timestamps:[mkTs(20)], sensors:[] },
+  { id:'CAB-102', group:'GR3', timestamps:[], sensors:[] },
+  { id:'CAB-103', group:'GR3', timestamps:[mkTs(8)], sensors:[{id:'TEMP-01',comment:'Check calibration'}] },
+  { id:'JNT-A01', group:'GR4', timestamps:[], sensors:[] },
+  { id:'JNT-A02', group:'GR4', timestamps:[mkTs(45)], sensors:[] },
+  { id:'JNT-B01', group:'GR4', timestamps:[], sensors:[] },
+  { id:'SPN-201', group:'GR5', timestamps:[mkTs(2)], sensors:[] },
+  { id:'SPN-202', group:'GR5', timestamps:[mkTs(15),mkTs(75)], sensors:[] },
+  { id:'SPN-203', group:'GR6', timestamps:[], sensors:[] },
+  { id:'DK-0011', group:'GR6', timestamps:[mkTs(120)], sensors:[{id:'VOLT-02',comment:''}] },
+  { id:'DK-0012', group:'GR6', timestamps:[], sensors:[] },
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────
@@ -185,26 +198,23 @@ function ItemRow({ item, onRecord, onSelect, style:rowStyle={} }) {
   const [flash, fireFlash] = useFlash();
   const valid = item.timestamps.filter(t=>t.valid);
   const last  = valid[0];
+  const gc    = groupColor(item.group);
   return (
     <div
       style={{
         display:'flex', alignItems:'center', gap:12,
         padding:'11px 16px',
+        paddingLeft: gc ? 12 : 16,
         background: flash ? 'rgba(34,197,94,0.07)' : 'transparent',
         borderBottom:`1px solid ${C.border}`,
+        borderLeft: gc ? `4px solid ${gc}` : 'none',
         transition:'background 0.35s',
         ...rowStyle,
       }}
     >
-      {/* Dot indicator */}
-      <div style={{
-        width:8, height:8, borderRadius:'50%', flexShrink:0,
-        background: valid.length > 0 ? C.green : C.textDim,
-        marginLeft:2,
-      }}/>
       <div onClick={()=>onSelect(item)} style={{ flex:1, minWidth:0, cursor:'pointer' }}>
-        <div style={{ fontSize:15, fontWeight:600, color:C.text, letterSpacing:-0.2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-          {item.id}
+        <div style={{ fontSize:15, fontWeight:600, color:C.text, letterSpacing:-0.2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', display:'flex', alignItems:'center', gap:6 }}>
+          {item.id}{item.group && <span style={{fontSize:10,fontWeight:700,color:gc||C.textDim,background:`${gc}1a`,borderRadius:5,padding:'1px 6px',flexShrink:0,border:`1px solid ${gc}44`}}>{item.group}</span>}
         </div>
         <div style={{ fontSize:12, color: last ? C.textMuted : C.textDim, marginTop:2, display:'flex', alignItems:'center', gap:5 }}>
           {last
@@ -229,18 +239,20 @@ function ItemCard({ item, onRecord, onSelect }) {
   const [flash, fireFlash] = useFlash();
   const valid = item.timestamps.filter(t=>t.valid);
   const last  = valid[0];
+  const gc    = groupColor(item.group);
   return (
     <div
       style={{
         background: flash ? 'rgba(34,197,94,0.09)' : C.surface,
         border:`1px solid ${flash ? C.greenBorder : C.border}`,
+        borderLeft: gc ? `4px solid ${gc}` : `1px solid ${flash ? C.greenBorder : C.border}`,
         borderRadius:18, padding:'14px 16px',
         display:'flex', alignItems:'center', gap:14,
         transition:'background 0.35s, border-color 0.35s',
       }}
     >
       <div onClick={()=>onSelect(item)} style={{ flex:1, minWidth:0, cursor:'pointer' }}>
-        <div style={{ fontSize:16, fontWeight:700, color:C.text, letterSpacing:-0.3 }}>{item.id}</div>
+        <div style={{ fontSize:16, fontWeight:700, color:C.text, letterSpacing:-0.3, display:'flex', alignItems:'center', gap:6 }}>{item.id}{item.group && <span style={{fontSize:10,fontWeight:700,color:gc,background:`${gc}1a`,borderRadius:5,padding:'1px 6px',flexShrink:0,border:`1px solid ${gc}44`}}>{item.group}</span>}</div>
         <div style={{ fontSize:12, color: last ? C.green : C.textDim, marginTop:4, display:'flex', alignItems:'center', gap:5 }}>
           {last
             ? <>{Ic.clock(C.textDim)}{fmtRelative(last.iso)}{valid.length > 1 && <span style={{color:C.textDim}}>+{valid.length-1}</span>}</>
@@ -264,13 +276,16 @@ function ItemMinimal({ item, onRecord, onSelect }) {
   const [flash, fireFlash] = useFlash();
   const valid = item.timestamps.filter(t=>t.valid);
   const last  = valid[0];
+  const gc    = groupColor(item.group);
   return (
     <div
       style={{
         display:'flex', alignItems:'center',
         padding:'8px 16px',
+        paddingLeft: gc ? 12 : 16,
         background: flash ? 'rgba(34,197,94,0.06)' : 'transparent',
         borderBottom:`1px solid ${C.border}`,
+        borderLeft: gc ? `4px solid ${gc}` : 'none',
         transition:'background 0.3s',
         minHeight:48,
       }}
@@ -290,7 +305,12 @@ function ItemMinimal({ item, onRecord, onSelect }) {
 // ─── Detail Screen ───────────────────────────────────────────
 function DetailScreen({ item, onBack, onRecord, onUpdateItem, sensorsList=SENSORS_LIST }) {
   const [tsExpanded,   setTsExpanded]   = useState(true);
-  const [sensExpanded, setSensExpanded] = useState(false);
+  const [sensExpanded, setSensExpanded] = useState(item.sensors.length > 0);
+
+  // Auto-expand sensors section if sensors are added (e.g. via import)
+  useEffect(() => {
+    if (item.sensors.length > 0) setSensExpanded(true);
+  }, [item.sensors.length]);
   const [flash, fireFlash] = useFlash(400);
   const [selSensor, setSelSensor] = useState('');
 
@@ -314,6 +334,7 @@ function DetailScreen({ item, onBack, onRecord, onUpdateItem, sensorsList=SENSOR
 
   const valid   = item.timestamps.filter(t=>t.valid);
   const invalid = item.timestamps.filter(t=>!t.valid);
+  const gc      = groupColor(item.group);
 
   return (
     <div style={{ height:'100%', overflowY:'auto', background:C.bg }}>
@@ -329,7 +350,10 @@ function DetailScreen({ item, onBack, onRecord, onUpdateItem, sensorsList=SENSOR
 
       {/* Title */}
       <div style={{ padding:'0 20px 24px' }}>
-        <div style={{ fontSize:30, fontWeight:800, color:C.text, letterSpacing:-0.7 }}>{item.id}</div>
+        <div style={{ fontSize:30, fontWeight:800, color:C.text, letterSpacing:-0.7, display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
+          {item.id}
+          {item.group && <span style={{ fontSize:13, fontWeight:700, color:gc, background:`${gc}1a`, borderRadius:8, padding:'3px 10px', border:`1px solid ${gc}44` }}>{item.group}</span>}
+        </div>
         <div style={{ fontSize:13, color:C.textMuted, marginTop:5, display:'flex', gap:12 }}>
           <span>{valid.length} valid timestamp{valid.length!==1?'s':''}</span>
           {invalid.length>0 && <span style={{color:C.red}}>{invalid.length} invalid</span>}
@@ -465,14 +489,33 @@ function DetailScreen({ item, onBack, onRecord, onUpdateItem, sensorsList=SENSOR
   );
 }
 
+// ─── Import Zone (reusable) ───────────────────────────────────
+function ImportZone({ label, sub, accept, inputRef, onChange }) {
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+      <label style={{ fontSize:11, fontWeight:700, color:C.textMuted, textTransform:'uppercase', letterSpacing:0.8, paddingLeft:4 }}>{label}</label>
+      <div
+        onClick={()=>inputRef.current?.click()}
+        style={{ background:C.surface, border:`1px dashed rgba(255,255,255,0.12)`, borderRadius:16, padding:'20px 16px', textAlign:'center', color:C.textMuted, fontSize:14, lineHeight:1.6, display:'flex', flexDirection:'column', alignItems:'center', gap:8, cursor:'pointer' }}
+      >
+        <span style={{ color:C.green, display:'inline-flex' }}>{Ic.upload(C.green)}</span>
+        <div>{sub}</div>
+      </div>
+      <input ref={inputRef} type="file" accept={accept} onChange={onChange} style={{ display:'none' }}/>
+    </div>
+  );
+}
+
 // ─── Add Screen ───────────────────────────────────────────────
-function AddScreen({ items, onAdd, sensors, onImportItems, onImportJSON }) {
+function AddScreen({ items, onAdd, sensors, onImportItems, onImportJSON, onImportSensors, onImportSensorDefaults }) {
   const [val,    setVal]    = useState('');
   const [done,   setDone]   = useState('');
   const [notice, setNotice] = useState('');
   const [err,    setErr]    = useState('');
-  const txtRef  = useRef();
-  const jsonRef = useRef();
+  const txtRef     = useRef();
+  const jsonRef    = useRef();
+  const sensorRef  = useRef();
+  const defRef     = useRef();
 
   const flash = (msg) => { setNotice(msg); setTimeout(()=>setNotice(''), 2400); };
 
@@ -495,6 +538,20 @@ function AddScreen({ items, onAdd, sensors, onImportItems, onImportJSON }) {
     const file = e.target.files[0]; if (!file) return;
     onImportJSON(file);
     flash(`Importing data from ${file.name}…`);
+    e.target.value = '';
+  };
+
+  const handleSensorFile = e => {
+    const file = e.target.files[0]; if (!file) return;
+    onImportSensors(file);
+    flash(`Importing sensors from ${file.name}…`);
+    e.target.value = '';
+  };
+
+  const handleDefFile = e => {
+    const file = e.target.files[0]; if (!file) return;
+    onImportSensorDefaults(file);
+    flash(`Applying sensor defaults from ${file.name}…`);
     e.target.value = '';
   };
 
@@ -543,14 +600,28 @@ function AddScreen({ items, onAdd, sensors, onImportItems, onImportJSON }) {
       <div style={{ padding:'0 16px', display:'flex', flexDirection:'column', gap:16, paddingBottom:100 }}>
         <ImportZone
           label="Import IDs (.txt)"
-          sub={<>One ID per line · <span style={{color:C.textDim, fontSize:12}}>duplicates skipped</span></>}
+          sub={<>One ID per line, optionally <code style={{color:C.text,fontSize:11}}>ID, Group</code></>}
           accept=".txt,text/plain"
           inputRef={txtRef}
           onChange={handleTxtFile}
         />
         <ImportZone
+          label="Import Sensors (.txt)"
+          sub="One sensor name per line"
+          accept=".txt,text/plain"
+          inputRef={sensorRef}
+          onChange={handleSensorFile}
+        />
+        <ImportZone
+          label="Import Sensor Defaults (.txt)"
+          sub={<><code style={{color:C.text,fontSize:11}}>ItemID, SensorID, comment</code> — pre-assigns sensors</>}
+          accept=".txt,text/plain"
+          inputRef={defRef}
+          onChange={handleDefFile}
+        />
+        <ImportZone
           label="Import full dataset (.json)"
-          sub={<>Restores items, timestamps &amp; sensors</>}
+          sub="Restores items, timestamps &amp; sensors"
           accept=".json,application/json"
           inputRef={jsonRef}
           onChange={handleJsonFile}
@@ -570,11 +641,10 @@ function AddScreen({ items, onAdd, sensors, onImportItems, onImportJSON }) {
 }
 
 // ─── Settings Screen ──────────────────────────────────────────
-function SettingsScreen({ items, sensors, onExport, onImportJSON, onImportSensors, onResetTimestamps, onResetAll }) {
+function SettingsScreen({ items, sensors, onExport, onImportJSON, onImportSensors, onImportSensorDefaults, onResetTimestamps, onResetAll }) {
   const totalTs  = items.reduce((a,i)=>a+i.timestamps.length, 0);
   const [confirm, setConfirm] = useState(null);
-  const jsonRef    = useRef();
-  const sensorRef  = useRef(); // 'ts' | 'all'
+  const jsonRef = useRef(); // 'ts' | 'all'
 
   const StatBox = ({ label, value, accent }) => (
     <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:18, padding:'16px 16px' }}>
@@ -623,11 +693,9 @@ function SettingsScreen({ items, sensors, onExport, onImportJSON, onImportSensor
         <div style={{ fontSize:11, fontWeight:700, color:C.textMuted, textTransform:'uppercase', letterSpacing:0.8, padding:'0 4px 8px' }}>Export & Backup</div>
         <div style={{ background:C.surface, borderRadius:18, overflow:'hidden', border:`1px solid ${C.border}` }}>
           <Row label="Export as JSON"    sub={`${items.length} items · ${totalTs} timestamps`} icon={Ic.upload()} onPress={onExport}/>
-          <Row label="Import JSON"       sub="Restore items, timestamps & sensors" icon={Ic.upload()} onPress={()=>jsonRef.current?.click()}/>
-          <Row label="Import Sensors (.txt)" sub={`${sensors.length} sensors currently loaded`} icon={Ic.upload()} last onPress={()=>sensorRef.current?.click()}/>
+          <Row label="Import JSON"       sub="Restore items, timestamps & sensors" icon={Ic.upload()} last onPress={()=>jsonRef.current?.click()}/>
         </div>
         <input ref={jsonRef}   type="file" accept=".json,application/json" onChange={e=>{ const f=e.target.files[0]; if(f){onImportJSON(f); e.target.value='';} }} style={{display:'none'}}/>
-        <input ref={sensorRef} type="file" accept=".txt,text/plain"        onChange={e=>{ const f=e.target.files[0]; if(f){onImportSensors(f); e.target.value='';} }} style={{display:'none'}}/>
       </div>
 
       {/* Reset */}
@@ -696,9 +764,9 @@ function SearchScreen({ items, onRecord, onSelect, variant }) {
 }
 
 // ─── Tab Bar ──────────────────────────────────────────────────
-function TabBar({ tab, setTab }) {
+function TabBar({ tab, setTab, onTabChange }) {
   const tabs = [
-    { id:'items',    label:'Items',    icon: Ic.list    },
+    { id:'items',    label:'Items',    icon: c => <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/><circle cx="12" cy="12" r="1.5" fill={c} stroke="none"/></svg> },
     { id:'search',   label:'Search',   icon: Ic.search  },
     { id:'add',      label:'Add',      icon: Ic.plus    },
     { id:'settings', label:'Settings', icon: Ic.gear    },
@@ -715,7 +783,7 @@ function TabBar({ tab, setTab }) {
         return (
           <button
             key={t.id}
-            onClick={()=>setTab(t.id)}
+            onClick={() => setTab(t.id)}
             style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:3, background:'none', border:'none', cursor:'pointer', padding:'4px 0', color: active?C.green:C.textDim, transition:'color 0.15s' }}
           >
             {t.icon(active?C.green:C.textDim)}
@@ -731,15 +799,25 @@ function TabBar({ tab, setTab }) {
 function ItemsTab({ items, onRecord, onSelect, variant }) {
   const valid = items.reduce((a,i)=>a+i.timestamps.filter(t=>t.valid).length, 0);
   const RowComp = variant==='card' ? ItemCard : variant==='minimal' ? ItemMinimal : ItemRow;
+  // Unique groups
+  const groups = [...new Set(items.map(i=>i.group).filter(Boolean))];
 
   return (
     <div style={{ height:'100%', display:'flex', flexDirection:'column' }}>
       <div style={{ height:60 }}/>
-      <div style={{ padding:'12px 20px 14px' }}>
+      <div style={{ padding:'12px 20px 10px' }}>
         <div style={{ fontSize:32, fontWeight:800, color:C.text, letterSpacing:-0.8, lineHeight:1.1 }}>Eventful</div>
         <div style={{ fontSize:13, color:C.textMuted, marginTop:5 }}>
           {items.length} items · <span style={{ color:C.green }}>{valid} recorded</span>
         </div>
+        {groups.length > 0 &&
+          <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginTop:10 }}>
+            {groups.map(g => {
+              const gc = groupColor(g);
+              return <span key={g} style={{ fontSize:11, fontWeight:700, color:gc, background:`${gc}1a`, borderRadius:6, padding:'2px 8px', border:`1px solid ${gc}44` }}>{g}</span>;
+            })}
+          </div>
+        }
       </div>
       <div style={{ flex:1, overflowY:'auto', paddingBottom:82 }}>
         {variant==='card'
@@ -756,7 +834,7 @@ function ItemsTab({ items, onRecord, onSelect, variant }) {
 // ─── App root ─────────────────────────────────────────────────
 function EventfulApp({ variant }) {
   const [items, setItems] = useState(()=>{
-    try { const s=localStorage.getItem('ef_items'); return s?JSON.parse(s):SEED; } catch { return SEED; }
+    try { const s=localStorage.getItem('ef_items_v2'); return s?JSON.parse(s):SEED; } catch { return SEED; }
   });
   const [sensors, setSensors] = useState(()=>{
     try { const s=localStorage.getItem('ef_sensors'); return s?JSON.parse(s):SENSORS_LIST; } catch { return SENSORS_LIST; }
@@ -764,7 +842,7 @@ function EventfulApp({ variant }) {
   const [tab,    setTab]    = useState('items');
   const [detail, setDetail] = useState(null);
 
-  useEffect(()=>{ localStorage.setItem('ef_items',JSON.stringify(items)); },[items]);
+  useEffect(()=>{ localStorage.setItem('ef_items_v2',JSON.stringify(items)); },[items]);
   useEffect(()=>{ localStorage.setItem('ef_sensors',JSON.stringify(sensors)); },[sensors]);
 
   const recordTimestamp = id => {
@@ -778,9 +856,9 @@ function EventfulApp({ variant }) {
     setDetail(updated);
   };
 
-  const addItem = id => {
+  const addItem = (id, group='') => {
     if (items.find(i=>i.id===id)) return;
-    setItems(prev=>[...prev, { id, timestamps:[], sensors:[] }]);
+    setItems(prev=>[...prev, { id, group, timestamps:[], sensors:[] }]);
   };
 
   const exportJSON = () => {
@@ -811,10 +889,44 @@ function EventfulApp({ variant }) {
   const importSensors = (file) => {
     const reader = new FileReader();
     reader.onload = e => {
-      const ids = e.target.result.split('\n').map(l=>l.trim()).filter(Boolean);
+      const names = e.target.result.split('\n').map(l=>l.trim()).filter(Boolean);
+      setSensors(names);
+    };
+    reader.readAsText(file);
+  };
+
+  const importSensorDefaults = (file) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const lines = e.target.result.split('\n').map(l=>l.trim()).filter(Boolean);
+      // Format: {itemId}, {sensorId}, {comment}
+      const assignments = lines.map(line => {
+        const parts = line.split(', ');
+        if (parts.length < 2) return null;
+        // itemId may contain spaces but not ', '
+        const itemId   = parts[0].trim();
+        const sensorId = parts[1].trim();
+        const comment  = parts.slice(2).join(', ').trim();
+        return { itemId, sensorId, comment };
+      }).filter(Boolean);
+
+      setItems(prev => prev.map(item => {
+        const defs = assignments.filter(a => a.itemId === item.id);
+        if (!defs.length) return item;
+        const updatedSensors = [...item.sensors];
+        defs.forEach(({ sensorId, comment }) => {
+          if (!updatedSensors.find(s => s.id === sensorId)) {
+            updatedSensors.push({ id: sensorId, comment });
+          }
+        });
+        return { ...item, sensors: updatedSensors };
+      }));
+
+      // Also add any new sensor names to the sensor list
+      const sensorNames = [...new Set(assignments.map(a => a.sensorId))];
       setSensors(prev => {
         const merged = [...prev];
-        ids.forEach(id => { if (!merged.includes(id)) merged.push(id); });
+        sensorNames.forEach(n => { if (!merged.includes(n)) merged.push(n); });
         return merged;
       });
     };
@@ -843,10 +955,10 @@ function EventfulApp({ variant }) {
 
       {tab==='items'    && <ItemsTab    items={items} onRecord={recordTimestamp} onSelect={handleSelect} variant={variant}/>}
       {tab==='search'   && <SearchScreen items={items} onRecord={recordTimestamp} onSelect={handleSelect} variant={variant}/>}
-      {tab==='add'      && <AddScreen    items={items} onAdd={addItem} sensors={sensors} onImportItems={file=>{ const r=new FileReader(); r.onload=e=>{ const ids=e.target.result.split('\n').map(l=>l.trim()).filter(Boolean); ids.forEach(id=>{ if(id && !items.find(i=>i.id===id)) setItems(prev=>[...prev,{id,timestamps:[],sensors:[]}]); }); }; r.readAsText(file); }} onImportJSON={importJSON}/>}
-      {tab==='settings' && <SettingsScreen items={items} sensors={sensors} onExport={exportJSON} onImportJSON={importJSON} onImportSensors={importSensors} onResetTimestamps={()=>setItems(prev=>prev.map(i=>({...i,timestamps:[]})))} onResetAll={()=>setItems([])}/>}
+      {tab==='add'      && <AddScreen    items={items} onAdd={addItem} sensors={sensors} onImportSensorDefaults={importSensorDefaults} onImportItems={file=>{ const r=new FileReader(); r.onload=e=>{ const lines=e.target.result.split('\n').map(l=>l.trim()).filter(Boolean); const newItems=lines.map(line=>{ const parts=line.split(', '); const id=parts[0].trim(); const group=parts[1]?.trim()||''; return id?{id,group,timestamps:[],sensors:[]}:null; }).filter(Boolean); setItems(newItems); }; r.readAsText(file); }} onImportJSON={importJSON} onImportSensors={importSensors}/>}
+      {tab==='settings' && <SettingsScreen items={items} sensors={sensors} onExport={exportJSON} onImportJSON={importJSON} onImportSensors={importSensors} onImportSensorDefaults={importSensorDefaults} onResetTimestamps={()=>setItems(prev=>prev.map(i=>({...i,timestamps:[]})))} onResetAll={()=>setItems([])}/>}
 
-      <TabBar tab={tab} setTab={setTab}/>
+      <TabBar tab={tab} setTab={t => { setDetail(null); setTab(t); }}/>
     </div>
   );
 }
