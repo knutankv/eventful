@@ -288,7 +288,7 @@ function ItemMinimal({ item, onRecord, onSelect }) {
 }
 
 // ─── Detail Screen ───────────────────────────────────────────
-function DetailScreen({ item, onBack, onRecord, onUpdateItem }) {
+function DetailScreen({ item, onBack, onRecord, onUpdateItem, sensorsList=SENSORS_LIST }) {
   const [tsExpanded,   setTsExpanded]   = useState(true);
   const [sensExpanded, setSensExpanded] = useState(false);
   const [flash, fireFlash] = useFlash(400);
@@ -448,7 +448,7 @@ function DetailScreen({ item, onBack, onRecord, onUpdateItem }) {
                 style={{ flex:1, background:C.surface, border:`1px solid ${C.border}`, borderRadius:12, padding:'10px 12px', color: selSensor?C.text:C.textMuted, fontSize:14, outline:'none' }}
               >
                 <option value="">Select sensor…</option>
-                {SENSORS_LIST.filter(s=>!item.sensors.find(ss=>ss.id===s)).map(s=><option key={s} value={s}>{s}</option>)}
+                {sensorsList.filter(s=>!item.sensors.find(ss=>ss.id===s)).map(s=><option key={s} value={s}>{s}</option>)}
               </select>
               <button
                 onClick={addSensor}
@@ -466,68 +466,102 @@ function DetailScreen({ item, onBack, onRecord, onUpdateItem }) {
 }
 
 // ─── Add Screen ───────────────────────────────────────────────
-function AddScreen({ items, onAdd }) {
-  const [val,  setVal]   = useState('');
-  const [done, setDone]  = useState('');
-  const [err,  setErr]   = useState('');
+function AddScreen({ items, onAdd, sensors, onImportItems, onImportJSON }) {
+  const [val,    setVal]    = useState('');
+  const [done,   setDone]   = useState('');
+  const [notice, setNotice] = useState('');
+  const [err,    setErr]    = useState('');
+  const txtRef  = useRef();
+  const jsonRef = useRef();
+
+  const flash = (msg) => { setNotice(msg); setTimeout(()=>setNotice(''), 2400); };
 
   const submit = () => {
     const id = val.trim();
     if (!id) return;
     if (items.find(i=>i.id===id)) { setErr(`"${id}" already exists`); return; }
     onAdd(id);
-    setDone(id); setVal(''); setErr('');
-    setTimeout(()=>setDone(''),2200);
+    flash(`"${id}" added`); setVal(''); setErr('');
   };
+
+  const handleTxtFile = e => {
+    const file = e.target.files[0]; if (!file) return;
+    onImportItems(file);
+    flash(`Importing IDs from ${file.name}…`);
+    e.target.value = '';
+  };
+
+  const handleJsonFile = e => {
+    const file = e.target.files[0]; if (!file) return;
+    onImportJSON(file);
+    flash(`Importing data from ${file.name}…`);
+    e.target.value = '';
+  };
+
+  const ImportZone = ({ label, sub, accept, inputRef, onChange }) => (
+    <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+      <label style={{ fontSize:11, fontWeight:700, color:C.textMuted, textTransform:'uppercase', letterSpacing:0.8, paddingLeft:4 }}>{label}</label>
+      <div
+        onClick={()=>inputRef.current?.click()}
+        style={{ background:C.surface, border:`1px dashed rgba(255,255,255,0.12)`, borderRadius:16, padding:'20px 16px', textAlign:'center', color:C.textMuted, fontSize:14, lineHeight:1.6, display:'flex', flexDirection:'column', alignItems:'center', gap:8, cursor:'pointer' }}
+      >
+        <span style={{ color:C.green, display:'inline-flex' }}>{Ic.upload(C.green)}</span>
+        <div>{sub}</div>
+      </div>
+      <input ref={inputRef} type="file" accept={accept} onChange={onChange} style={{ display:'none' }}/>
+    </div>
+  );
 
   return (
     <div style={{ height:'100%', overflowY:'auto' }}>
       <div style={{ height:60 }}/>
-      <div style={{ padding:'12px 20px 28px' }}>
-        <div style={{ fontSize:30, fontWeight:800, color:C.text, letterSpacing:-0.7 }}>Add Item</div>
-        <div style={{ fontSize:14, color:C.textMuted, marginTop:6 }}>Enter an ID or import from a text file</div>
+      <div style={{ padding:'12px 20px 20px' }}>
+        <div style={{ fontSize:30, fontWeight:800, color:C.text, letterSpacing:-0.7 }}>Add Items</div>
+        <div style={{ fontSize:14, color:C.textMuted, marginTop:6 }}>Manually or import from file</div>
       </div>
 
-      {done &&
-        <div style={{ margin:'0 16px 16px', background:C.greenDim, border:`1px solid ${C.greenBorder}`, borderRadius:16, padding:'12px 16px', display:'flex', alignItems:'center', gap:10, color:C.green, fontSize:14, fontWeight:600 }}>
-          {Ic.check(C.green)} "{done}" added successfully
+      {notice &&
+        <div style={{ margin:'0 16px 14px', background:C.greenDim, border:`1px solid ${C.greenBorder}`, borderRadius:14, padding:'11px 16px', display:'flex', alignItems:'center', gap:8, color:C.green, fontSize:14, fontWeight:600 }}>
+          {Ic.check(C.green)} {notice}
         </div>
       }
 
-      <div style={{ padding:'0 16px', display:'flex', flexDirection:'column', gap:10, marginBottom:28 }}>
+      {/* Manual entry */}
+      <div style={{ padding:'0 16px', display:'flex', flexDirection:'column', gap:10, marginBottom:24 }}>
         <label style={{ fontSize:11, fontWeight:700, color:C.textMuted, textTransform:'uppercase', letterSpacing:0.8, paddingLeft:4 }}>Item ID</label>
-        <input
-          type="text"
-          placeholder="e.g. BRG-005"
-          value={val}
-          onChange={e=>{setVal(e.target.value);setErr('');}}
-          onKeyDown={e=>e.key==='Enter'&&submit()}
-          style={{ background:C.surface, border:`1px solid ${err?C.redBorder:C.border}`, borderRadius:16, padding:'15px 16px', color:C.text, fontSize:16, outline:'none', width:'100%', transition:'border-color 0.15s' }}
-        />
+        <input type="text" placeholder="e.g. BRG-005" value={val} onChange={e=>{setVal(e.target.value);setErr('');}} onKeyDown={e=>e.key==='Enter'&&submit()}
+          style={{ background:C.surface, border:`1px solid ${err?C.redBorder:C.border}`, borderRadius:14, padding:'14px 16px', color:C.text, fontSize:16, outline:'none', width:'100%' }}/>
         {err && <div style={{ fontSize:12, color:C.red, paddingLeft:4 }}>{err}</div>}
-        <button
-          onClick={submit}
-          disabled={!val.trim()}
-          style={{ height:54, borderRadius:18, border:'none', cursor: val.trim()?'pointer':'default', background: val.trim()?C.green:C.surface2, color: val.trim()?'#0a120d':C.textDim, fontWeight:700, fontSize:16, transition:'all 0.15s', letterSpacing:-0.2 }}
-        >
+        <button onClick={submit} disabled={!val.trim()} style={{ height:52, borderRadius:16, border:'none', cursor:val.trim()?'pointer':'default', background:val.trim()?C.green:C.surface2, color:val.trim()?'#0a120d':C.textDim, fontWeight:700, fontSize:16, transition:'all 0.15s' }}>
           Add Item
         </button>
       </div>
 
-      <div style={{ height:1, background:C.border, margin:'0 16px 28px' }}/>
+      <div style={{ height:1, background:C.border, margin:'0 16px 24px' }}/>
 
-      <div style={{ padding:'0 16px', display:'flex', flexDirection:'column', gap:10 }}>
-        <label style={{ fontSize:11, fontWeight:700, color:C.textMuted, textTransform:'uppercase', letterSpacing:0.8, paddingLeft:4 }}>Import from .txt file</label>
-        <div style={{
-          background:C.surface, border:`1px dashed rgba(255,255,255,0.12)`,
-          borderRadius:18, padding:'28px 20px', textAlign:'center',
-          color:C.textMuted, fontSize:14, lineHeight:1.6,
-          display:'flex', flexDirection:'column', alignItems:'center', gap:10,
-        }}>
-          <span style={{ color:C.green, display:'inline-flex' }}>{Ic.upload(C.green)}</span>
-          <div>
-            Tap to select a <strong style={{color:C.text}}>.txt</strong> file<br/>
-            <span style={{ fontSize:12, color:C.textDim }}>One ID per line — duplicates are skipped</span>
+      {/* Import zones */}
+      <div style={{ padding:'0 16px', display:'flex', flexDirection:'column', gap:16, paddingBottom:100 }}>
+        <ImportZone
+          label="Import IDs (.txt)"
+          sub={<>One ID per line · <span style={{color:C.textDim, fontSize:12}}>duplicates skipped</span></>}
+          accept=".txt,text/plain"
+          inputRef={txtRef}
+          onChange={handleTxtFile}
+        />
+        <ImportZone
+          label="Import full dataset (.json)"
+          sub={<>Restores items, timestamps &amp; sensors</>}
+          accept=".json,application/json"
+          inputRef={jsonRef}
+          onChange={handleJsonFile}
+        />
+        <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:16, padding:'14px 16px' }}>
+          <div style={{ fontSize:12, fontWeight:700, color:C.textMuted, textTransform:'uppercase', letterSpacing:0.6, marginBottom:10 }}>Current sensor list ({sensors.length})</div>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
+            {sensors.map(s => (
+              <span key={s} style={{ fontSize:12, background:C.greenDim, color:C.green, border:`1px solid ${C.greenBorder}`, borderRadius:8, padding:'3px 9px', fontWeight:600 }}>{s}</span>
+            ))}
+            {sensors.length === 0 && <span style={{ fontSize:13, color:C.textDim }}>No sensors defined</span>}
           </div>
         </div>
       </div>
@@ -536,9 +570,11 @@ function AddScreen({ items, onAdd }) {
 }
 
 // ─── Settings Screen ──────────────────────────────────────────
-function SettingsScreen({ items, onExport, onResetTimestamps, onResetAll }) {
+function SettingsScreen({ items, sensors, onExport, onImportJSON, onImportSensors, onResetTimestamps, onResetAll }) {
   const totalTs  = items.reduce((a,i)=>a+i.timestamps.length, 0);
-  const [confirm, setConfirm] = useState(null); // 'ts' | 'all'
+  const [confirm, setConfirm] = useState(null);
+  const jsonRef    = useRef();
+  const sensorRef  = useRef(); // 'ts' | 'all'
 
   const StatBox = ({ label, value, accent }) => (
     <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:18, padding:'16px 16px' }}>
@@ -587,8 +623,11 @@ function SettingsScreen({ items, onExport, onResetTimestamps, onResetAll }) {
         <div style={{ fontSize:11, fontWeight:700, color:C.textMuted, textTransform:'uppercase', letterSpacing:0.8, padding:'0 4px 8px' }}>Export & Backup</div>
         <div style={{ background:C.surface, borderRadius:18, overflow:'hidden', border:`1px solid ${C.border}` }}>
           <Row label="Export as JSON"    sub={`${items.length} items · ${totalTs} timestamps`} icon={Ic.upload()} onPress={onExport}/>
-          <Row label="Download Backup"   sub="Auto-backup of current session" icon={Ic.upload()} last onPress={()=>{}}/>
+          <Row label="Import JSON"       sub="Restore items, timestamps & sensors" icon={Ic.upload()} onPress={()=>jsonRef.current?.click()}/>
+          <Row label="Import Sensors (.txt)" sub={`${sensors.length} sensors currently loaded`} icon={Ic.upload()} last onPress={()=>sensorRef.current?.click()}/>
         </div>
+        <input ref={jsonRef}   type="file" accept=".json,application/json" onChange={e=>{ const f=e.target.files[0]; if(f){onImportJSON(f); e.target.value='';} }} style={{display:'none'}}/>
+        <input ref={sensorRef} type="file" accept=".txt,text/plain"        onChange={e=>{ const f=e.target.files[0]; if(f){onImportSensors(f); e.target.value='';} }} style={{display:'none'}}/>
       </div>
 
       {/* Reset */}
@@ -603,7 +642,7 @@ function SettingsScreen({ items, onExport, onResetTimestamps, onResetAll }) {
             onPress={()=>{ if(confirm==='ts'){onResetTimestamps();setConfirm(null);}else setConfirm('ts'); }}
           />
           <Row
-            label={confirm==='all' ? 'Hold to confirm reset' : 'Reset Everything'}
+            label={confirm==='all' ? 'Tap again to confirm' : 'Reset Everything'}
             sub="Clears all items, timestamps & sensors"
             color={C.red} icon={Ic.trash(C.red)}
             danger={confirm==='all'?'active':null}
@@ -719,10 +758,14 @@ function EventfulApp({ variant }) {
   const [items, setItems] = useState(()=>{
     try { const s=localStorage.getItem('ef_items'); return s?JSON.parse(s):SEED; } catch { return SEED; }
   });
+  const [sensors, setSensors] = useState(()=>{
+    try { const s=localStorage.getItem('ef_sensors'); return s?JSON.parse(s):SENSORS_LIST; } catch { return SENSORS_LIST; }
+  });
   const [tab,    setTab]    = useState('items');
   const [detail, setDetail] = useState(null);
 
   useEffect(()=>{ localStorage.setItem('ef_items',JSON.stringify(items)); },[items]);
+  useEffect(()=>{ localStorage.setItem('ef_sensors',JSON.stringify(sensors)); },[sensors]);
 
   const recordTimestamp = id => {
     const ts = { iso: new Date().toISOString(), valid:true };
@@ -741,15 +784,44 @@ function EventfulApp({ variant }) {
   };
 
   const exportJSON = () => {
-    const blob = new Blob([JSON.stringify(items,null,2)],{type:'application/json'});
+    const blob = new Blob([JSON.stringify({ items, sensors },null,2)],{type:'application/json'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = `eventful-${new Date().toISOString().slice(0,10)}.json`;
     a.click();
   };
 
+  const importJSON = (file) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const data = JSON.parse(e.target.result);
+        // Support both {items, sensors} format and bare array
+        if (Array.isArray(data)) {
+          setItems(data);
+        } else {
+          if (data.items)   setItems(data.items);
+          if (data.sensors) setSensors(data.sensors);
+        }
+      } catch { alert('Invalid JSON file'); }
+    };
+    reader.readAsText(file);
+  };
+
+  const importSensors = (file) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const ids = e.target.result.split('\n').map(l=>l.trim()).filter(Boolean);
+      setSensors(prev => {
+        const merged = [...prev];
+        ids.forEach(id => { if (!merged.includes(id)) merged.push(id); });
+        return merged;
+      });
+    };
+    reader.readAsText(file);
+  };
+
   const handleSelect = item => {
-    // sync with latest state
     const latest = items.find(i=>i.id===item.id)||item;
     setDetail(latest);
   };
@@ -761,6 +833,7 @@ function EventfulApp({ variant }) {
         <div style={{ position:'absolute', inset:0, zIndex:50, background:C.bg }}>
           <DetailScreen
             item={items.find(i=>i.id===detail.id)||detail}
+            sensorsList={sensors}
             onBack={()=>setDetail(null)}
             onRecord={recordTimestamp}
             onUpdateItem={updateItem}
@@ -770,8 +843,8 @@ function EventfulApp({ variant }) {
 
       {tab==='items'    && <ItemsTab    items={items} onRecord={recordTimestamp} onSelect={handleSelect} variant={variant}/>}
       {tab==='search'   && <SearchScreen items={items} onRecord={recordTimestamp} onSelect={handleSelect} variant={variant}/>}
-      {tab==='add'      && <AddScreen    items={items} onAdd={addItem}/>}
-      {tab==='settings' && <SettingsScreen items={items} onExport={exportJSON} onResetTimestamps={()=>setItems(prev=>prev.map(i=>({...i,timestamps:[]})))} onResetAll={()=>setItems(SEED)}/>}
+      {tab==='add'      && <AddScreen    items={items} onAdd={addItem} sensors={sensors} onImportItems={file=>{ const r=new FileReader(); r.onload=e=>{ const ids=e.target.result.split('\n').map(l=>l.trim()).filter(Boolean); ids.forEach(id=>{ if(id && !items.find(i=>i.id===id)) setItems(prev=>[...prev,{id,timestamps:[],sensors:[]}]); }); }; r.readAsText(file); }} onImportJSON={importJSON}/>}
+      {tab==='settings' && <SettingsScreen items={items} sensors={sensors} onExport={exportJSON} onImportJSON={importJSON} onImportSensors={importSensors} onResetTimestamps={()=>setItems(prev=>prev.map(i=>({...i,timestamps:[]})))} onResetAll={()=>setItems([])}/>}
 
       <TabBar tab={tab} setTab={setTab}/>
     </div>
